@@ -1,0 +1,288 @@
+{
+    "prompt_instructions": "You are an expert designing a 3D scene layout on tabletop from an embodied task description. Output a reasoning process, a scene graph text, and a tabletop layout JSON.\n**Spatial definition:**:\n1. Coordinate System: Origin at tabletop's proximal top-left (0, 0, 0). x-axis right (+), y-axis from proximal to distal (+), z-axis up (+). Observer at -y, looking +y.\n2. Direction Mappings: Direction Mappings: Front (small y), Back (large y), Left (small x), Right (large x), Facing based on z-axis rotation. (e.g., \"face to front\" points towards the observer, i.e., the -y direction). |\n3. Spatial Relationship\n    - Position (Nine-Grid): x (left/middle/right) + y (front/middle/back).\n    - Horizontal: Compare x/y for left/right, front/back. Keep closest pairs, remove duals.\n    - Vertical: Compare z for above/below. Keep closest pairs, remove duals.\n    - Containment: Compare z and x/y overlap for inside.\n\n**Input:** JSON object with keys: `Environment` (string), \"item_placement_zone\": [X_min, X_max, Y_min, Y_max], /* cm */, 'sink_zone': [X_min, X_max, Y_min, Y_max], /* cm */(Only exist when it is a bathroom vanity), `Task` (string), `Goal` (list[str]), `Action Sequence` (list[str]), `Objects` (list[str] - types).\n\n**Processing & Scene Graph:**\n1.  **Analyze Task:** Understand the input JSON.\n2.  **Identify Objects:** List **Core Task Objects** (involved in `Objects`/`Goal`/`Action Sequence`) and **Environment Objects** (draw from `Environment`, more is better). Note types/quantities. Assign instance IDs (e.g., `pen_0`).\n3.  **Reasoning Paragraph:** Write a paragraph explaining initial object placement based on task analysis. Include:\n    *   Intro sentence (goal: layout generation; total object count).\n    *   Core Task Objects list (counts & instance IDs).\n    *   Environment Objects list (counts & instance IDs).\n    *   Placement Reasoning Paragraph: A coherent paragraph of detailed scene description, including the objects, their positions, and the overall layout of the tabletop infered from the given `environment`/`Goal`\n4.  **Scene Graph Text:** Based *only* on reasoning, generate scene graph text:\n    *   Nodes: 1. `(instance_id, is at, Position (Nine-Grid))` per object. 2. `(instance_id, face to, direction)` per object.\n    *   Edges: Salient `(subject_id, relation, object_id)` (e.g., `left of`). Avoid redundancy. Each triplet on a new line. Relation includes Containment/Vertical/Horizontal classes.\n\n**Output Format (Strict Order):**\n1.  Reasoning Paragraph (from Step 3).\n2.  Scene Graph Text (from Step 4, newline separated triplets).\n3.  The exact text block:\nTherefore, the scene layout is:\n**Final Answer**\n\n4.  Scene Layout JSON (immediately following **Final Answer**, no extra text before/after).\n\n**JSON Format:**\n```json\n{ \"item_placement_zone\": /* follow the input `item_placement_zone` */\n  \"sink_zone\": /* follow the input `sink_zone` */ (if not present, do not output this key)\n  \"objects\": [\n    {\n      \"instance\": \"type_instance_id\", /* e.g., pen_0 */\n      \"description\": \"Brief text.\",\n      \"z_rotation\": 0.0, /* degrees */ (z_rotation 0 means the object is facing the observer)(consider the bbox after rotation, collision, and other factor)\n      \"size\": [width, depth, height], /* cm */\n      \"position\": [x, y, z] /* cm, center coords, Calculate Z based on support: Z ≈ height/2 if on table, else account for \"inside\" or \"on the top of\" relation. */\n    }\n    /* ... more objects */ (object order should from large size to small size)\n  ]\n}\n```\n-   Use consistent instance IDs from Step 2.\n-   Provide reasonable object `size` estimates.\n-   Ensure valid JSON structure.\n\nGenerate the three output parts consecutively as specified. The input embodied task description is as follows:",
+    "input_task_description": {
+        "Environment": "A tabletop with a floral plate, napkin, salt and pepper shakers, glasses, candlesticks, and a bowl with eggs.",
+        "item_placement_zone": [
+            0.0,
+            158.8,
+            0.0,
+            78.8
+        ],
+        "Task": "Organize the eggs and napkin neatly on the floral plate and move candlesticks closer.",
+        "Goal": [
+            "Pick eggs out of the bowl",
+            "Place eggs on the floral plate",
+            "Pick the napkin from the floral plate",
+            "Fold and place the napkin on the right side of the floral plate",
+            "Push the two candlesticks closer together near the glasses"
+        ],
+        "Objects cluster": [
+            "Eggs",
+            "Floral Plate",
+            "Napkin",
+            "Candlesticks",
+            "Bowl",
+            "Glasses"
+        ]
+    },
+    "reasoning_paragraph": "The goal is to determine the setup based on the task of organizing items on a tabletop. The task suggests a dining or casual setting, where various objects are arranged for a meal or gathering. \n\n**Core Task Objects:**  \nFloral Plate(1), Napkin(1), Eggs(3), Candlesticks(2), Glasses(2)\n\n**Environment Objects:**  \nSalt and Pepper Shakers(2), Bowl(1)\n\nThe scene features a well-organized tabletop, with a large floral plate positioned prominently in the center, serving as the focal point for the arrangement. On the left side of the plate, two small salt and pepper shakers are placed alongside a folded napkin, which is neatly laid out. To the right of the plate, two glasses are positioned, one filled with a dark liquid and the other with a lighter beverage, ensuring easy access for diners. Behind the glasses, two candlesticks are arranged closely together, providing a warm ambiance. A bowl containing three eggs is situated to the right of the floral plate, allowing for easy retrieval. The overall layout is balanced, with open spaces in the upper and lower parts of the tabletop, facilitating movement and interaction. Based on this task analysis, the scene graph is arranged as follows:",
+    "scene_graph": [
+        "(placemat_0, is at, center)",
+        "(placemat_0, face to, front)",
+        "(plate_0, is at, center)",
+        "(plate_0, face to, front)",
+        "(bowl_0, is at, center)",
+        "(bowl_0, face to, front)",
+        "(napkin_0, is at, center)",
+        "(napkin_0, face to, front)",
+        "(glass_0, is at, center)",
+        "(glass_0, face to, front)",
+        "(candlestick_1, is at, middle_right)",
+        "(candlestick_1, face to, front)",
+        "(salt_shaker_0, is at, middle_left)",
+        "(salt_shaker_0, face to, front)",
+        "(candlestick_0, is at, center)",
+        "(candlestick_0, face to, front)",
+        "(pepper_shaker_0, is at, center)",
+        "(pepper_shaker_0, face to, front)",
+        "(pepper_0, is at, center)",
+        "(pepper_0, face to, front)",
+        "(orange_0, is at, center)",
+        "(orange_0, face to, front)",
+        "(orange_1, is at, center)",
+        "(orange_1, face to, front)",
+        "(orange_2, is at, center)",
+        "(orange_2, face to, front)",
+        "(pepper_0, in, bowl_0)",
+        "(orange_1, in, bowl_0)",
+        "(orange_2, in, bowl_0)",
+        "(napkin_0, above, plate_0)",
+        "(placemat_0, in front of, plate_0)",
+        "(placemat_0, in front of, napkin_0)",
+        "(placemat_0, right of, salt_shaker_0)",
+        "(placemat_0, left of, glass_0)",
+        "(placemat_0, left of, pepper_shaker_0)",
+        "(plate_0, in front of, napkin_0)",
+        "(plate_0, left of, glass_0)",
+        "(plate_0, right of, salt_shaker_0)",
+        "(plate_0, left of, pepper_shaker_0)",
+        "(bowl_0, behind, orange_0)",
+        "(bowl_0, left of, candlestick_0)",
+        "(bowl_0, right of, glass_0)",
+        "(bowl_0, right of, pepper_shaker_0)",
+        "(bowl_0, left of, candlestick_1)",
+        "(glass_0, behind, pepper_shaker_0)",
+        "(glass_0, behind, orange_0)",
+        "(glass_0, left of, candlestick_0)",
+        "(candlestick_1, right of, candlestick_0)",
+        "(candlestick_1, right of, orange_0)",
+        "(salt_shaker_0, left of, napkin_0)",
+        "(candlestick_0, behind, orange_0)",
+        "(pepper_shaker_0, left of, orange_0)"
+    ],
+    "scene_layout_json": {
+        "item_placement_zone": [
+            0.0,
+            158.8,
+            0.0,
+            78.8
+        ],
+        "objects": [
+            {
+                "instance": "placemat_0",
+                "size": [
+                    52.4,
+                    75.5,
+                    4.0
+                ],
+                "position": [
+                    42.5,
+                    33.6,
+                    1.7
+                ],
+                "z_rotation": 0.0,
+                "description": "Rectangular placemat, red and beige colors, intricate patterns, fringed edges, textured appearance."
+            },
+            {
+                "instance": "plate_0",
+                "size": [
+                    42.7,
+                    42.7,
+                    4.3
+                ],
+                "position": [
+                    43.0,
+                    36.0,
+                    2.3
+                ],
+                "z_rotation": 0.0,
+                "description": "Round ceramic plate, dark blue with floral design, smooth glossy surface, slight lip, plain white underside."
+            },
+            {
+                "instance": "bowl_0",
+                "size": [
+                    36.0,
+                    35.9,
+                    13.6
+                ],
+                "position": [
+                    112.8,
+                    46.6,
+                    6.5
+                ],
+                "z_rotation": 0.0,
+                "description": "Ceramic bowl with gradient glaze from deep blue to turquoise, smooth rounded shape, golden rim."
+            },
+            {
+                "instance": "napkin_0",
+                "size": [
+                    24.5,
+                    25.0,
+                    2.0
+                ],
+                "position": [
+                    43.1,
+                    36.4,
+                    6.0
+                ],
+                "z_rotation": 0.0,
+                "description": "Large, folded white fabric, smooth texture, well-pressed, minimal wrinkles, slightly frayed edges."
+            },
+            {
+                "instance": "glass_0",
+                "size": [
+                    19.8,
+                    19.8,
+                    31.5
+                ],
+                "position": [
+                    82.0,
+                    44.6,
+                    15.4
+                ],
+                "z_rotation": 0.0,
+                "description": "Decorative glass goblet with fluted design, wide bowl, slender stem, smooth texture, deep color."
+            },
+            {
+                "instance": "candlestick_1",
+                "size": [
+                    19.7,
+                    19.0,
+                    40.9
+                ],
+                "position": [
+                    142.0,
+                    44.5,
+                    20.2
+                ],
+                "z_rotation": 0.0,
+                "description": "Decorative brass candlestick with a sturdy base, elegant slender neck, and tapered white candle."
+            },
+            {
+                "instance": "salt_shaker_0",
+                "size": [
+                    12.1,
+                    24.4,
+                    20.4
+                ],
+                "position": [
+                    12.7,
+                    57.7,
+                    10.0
+                ],
+                "z_rotation": 0.0,
+                "description": "Cylindrical salt shaker with a smooth surface, rounded body, and a glossy finish."
+            },
+            {
+                "instance": "candlestick_0",
+                "size": [
+                    17.7,
+                    17.0,
+                    36.8
+                ],
+                "position": [
+                    128.0,
+                    54.8,
+                    18.4
+                ],
+                "z_rotation": 0.0,
+                "description": "Decorative brass candlestick with a sturdy base, elegant slender neck, and tapered white candle."
+            },
+            {
+                "instance": "pepper_shaker_0",
+                "size": [
+                    10.2,
+                    20.7,
+                    17.2
+                ],
+                "position": [
+                    82.1,
+                    25.3,
+                    8.3
+                ],
+                "z_rotation": 0.0,
+                "description": "Cylindrical salt shaker with a smooth surface, rounded body, and a glossy finish."
+            },
+            {
+                "instance": "pepper_0",
+                "size": [
+                    12.0,
+                    12.0,
+                    25.0
+                ],
+                "position": [
+                    112.7,
+                    46.2,
+                    12.2
+                ],
+                "z_rotation": 0.0,
+                "description": "Glass jar with transparent cylindrical body and metallic lid; surface shows signs of wear."
+            },
+            {
+                "instance": "orange_0",
+                "size": [
+                    10.3,
+                    10.3,
+                    10.3
+                ],
+                "position": [
+                    112.7,
+                    46.0,
+                    21.1
+                ],
+                "z_rotation": 0.0,
+                "description": "Round, orange fruit with dimpled skin, vibrant yellow-orange hue, smooth surface, symmetrical appearance."
+            },
+            {
+                "instance": "orange_1",
+                "size": [
+                    10.2,
+                    10.1,
+                    9.6
+                ],
+                "position": [
+                    112.8,
+                    46.7,
+                    11.7
+                ],
+                "z_rotation": 0.0,
+                "description": "Spherical, vibrant orange with textured dimples, glossy surface, and small stem on top."
+            },
+            {
+                "instance": "orange_2",
+                "size": [
+                    9.7,
+                    9.6,
+                    9.1
+                ],
+                "position": [
+                    112.8,
+                    45.4,
+                    12.7
+                ],
+                "z_rotation": 0.0,
+                "description": "Spherical, vibrant orange with textured dimples, glossy surface, and small stem on top."
+            }
+        ]
+    }
+}

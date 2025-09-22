@@ -1,0 +1,208 @@
+{
+    "prompt_instructions": "You are an expert designing a 3D scene layout on tabletop from an embodied task description. Output a reasoning process, a scene graph text, and a tabletop layout JSON.\n**Spatial definition:**:\n1. Coordinate System: Origin at tabletop's proximal top-left (0, 0, 0). x-axis right (+), y-axis from proximal to distal (+), z-axis up (+). Observer at -y, looking +y.\n2. Direction Mappings: Direction Mappings: Front (small y), Back (large y), Left (small x), Right (large x), Facing based on z-axis rotation. (e.g., \"face to front\" points towards the observer, i.e., the -y direction). |\n3. Spatial Relationship\n    - Position (Nine-Grid): x (left/middle/right) + y (front/middle/back).\n    - Horizontal: Compare x/y for left/right, front/back. Keep closest pairs, remove duals.\n    - Vertical: Compare z for above/below. Keep closest pairs, remove duals.\n    - Containment: Compare z and x/y overlap for inside.\n\n**Input:** JSON object with keys: `Environment` (string), \"item_placement_zone\": [X_min, X_max, Y_min, Y_max], /* cm */, 'sink_zone': [X_min, X_max, Y_min, Y_max], /* cm */(Only exist when it is a bathroom vanity), `Task` (string), `Goal` (list[str]), `Action Sequence` (list[str]), `Objects` (list[str] - types).\n\n**Processing & Scene Graph:**\n1.  **Analyze Task:** Understand the input JSON.\n2.  **Identify Objects:** List **Core Task Objects** (involved in `Objects`/`Goal`/`Action Sequence`) and **Environment Objects** (draw from `Environment`, more is better). Note types/quantities. Assign instance IDs (e.g., `pen_0`).\n3.  **Reasoning Paragraph:** Write a paragraph explaining initial object placement based on task analysis. Include:\n    *   Intro sentence (goal: layout generation; total object count).\n    *   Core Task Objects list (counts & instance IDs).\n    *   Environment Objects list (counts & instance IDs).\n    *   Placement Reasoning Paragraph: A coherent paragraph of detailed scene description, including the objects, their positions, and the overall layout of the tabletop infered from the given `environment`/`Goal`\n4.  **Scene Graph Text:** Based *only* on reasoning, generate scene graph text:\n    *   Nodes: 1. `(instance_id, is at, Position (Nine-Grid))` per object. 2. `(instance_id, face to, direction)` per object.\n    *   Edges: Salient `(subject_id, relation, object_id)` (e.g., `left of`). Avoid redundancy. Each triplet on a new line. Relation includes Containment/Vertical/Horizontal classes.\n\n**Output Format (Strict Order):**\n1.  Reasoning Paragraph (from Step 3).\n2.  Scene Graph Text (from Step 4, newline separated triplets).\n3.  The exact text block:\nTherefore, the scene layout is:\n**Final Answer**\n\n4.  Scene Layout JSON (immediately following **Final Answer**, no extra text before/after).\n\n**JSON Format:**\n```json\n{ \"item_placement_zone\": /* follow the input `item_placement_zone` */\n  \"sink_zone\": /* follow the input `sink_zone` */ (if not present, do not output this key)\n  \"objects\": [\n    {\n      \"instance\": \"type_instance_id\", /* e.g., pen_0 */\n      \"description\": \"Brief text.\",\n      \"z_rotation\": 0.0, /* degrees */ (z_rotation 0 means the object is facing the observer)(consider the bbox after rotation, collision, and other factor)\n      \"size\": [width, depth, height], /* cm */\n      \"position\": [x, y, z] /* cm, center coords, Calculate Z based on support: Z ≈ height/2 if on table, else account for \"inside\" or \"on the top of\" relation. */\n    }\n    /* ... more objects */ (object order should from large size to small size)\n  ]\n}\n```\n-   Use consistent instance IDs from Step 2.\n-   Provide reasonable object `size` estimates.\n-   Ensure valid JSON structure.\n\nGenerate the three output parts consecutively as specified. The input embodied task description is as follows:",
+    "input_task_description": {
+        "Environment": "A tabletop with a ceramic pitcher on stacked books on the left, candles near the center, a potted plant in the center, and books stacked on the right.",
+        "item_placement_zone": [
+            0.0,
+            98.7,
+            0.0,
+            32.0
+        ],
+        "Task": "Create a decorative cluster with pitcher, plant, and candles on the left",
+        "Goal": [
+            "Pick the plant and move it next to the pitcher on the left",
+            "Pick candle_0 and place it beside the plant",
+            "Pick candle_1 and place it beside candle_0"
+        ],
+        "Objects cluster": [
+            "Pitcher",
+            "Plant",
+            "Candles"
+        ]
+    },
+    "reasoning_paragraph": "The goal is to determine the setup based on the task provided. The task suggests a typical tabletop arrangement, likely in a living room or study setting, where decorative and functional items are organized for aesthetic appeal and accessibility. \n\n**Core Task Objects:** Pitcher(1), Plant(1), Candles(2)\n\n**Environment Objects:** Books(5)\n\nThe scene features a well-organized tabletop with a variety of objects that create a balanced and visually appealing layout. On the left side, a ceramic pitcher is positioned atop a stack of books, providing a functional yet decorative element. Nearby, two white candles are placed, adding to the ambiance. In the center, a small potted plant with spiky leaves serves as a focal point, drawing attention to that area of the table. To the right of the plant, a small rectangular object, possibly a box or a folded cloth, is situated, contributing to the overall arrangement. On the far right, two additional stacked books are present, topped with a closed notebook and a pair of glasses, which adds a touch of liveliness to the scene. The layout is designed to keep the center area relatively open while clustering items towards the edges, ensuring that each object is easily accessible without overcrowding the space. Based on this task analysis, the scene graph is arranged as follows:",
+    "scene_graph": [
+        "(book_1, is at, middle_right)",
+        "(book_1, face to, front)",
+        "(book_0, is at, middle_left)",
+        "(book_0, face to, front)",
+        "(book_2, is at, middle_left)",
+        "(book_2, face to, front)",
+        "(vase_0, is at, middle_left)",
+        "(vase_0, face to, front)",
+        "(book_3, is at, center)",
+        "(book_3, face to, front)",
+        "(plant_0, is at, center)",
+        "(plant_0, face to, front)",
+        "(book_4, is at, center)",
+        "(book_4, face to, front)",
+        "(candle_1, is at, center)",
+        "(candle_1, face to, front)",
+        "(candle_0, is at, center)",
+        "(candle_0, face to, front)",
+        "(book_2, above, book_0)",
+        "(book_4, above, book_1)",
+        "(book_1, right of, book_4)",
+        "(book_0, right of, book_2)",
+        "(book_0, left of, vase_0)",
+        "(book_0, left of, candle_0)",
+        "(book_0, left of, candle_1)",
+        "(book_3, right of, candle_1)",
+        "(book_3, right of, candle_0)",
+        "(book_3, left of, plant_0)",
+        "(book_3, right of, vase_0)",
+        "(book_3, right of, book_2)",
+        "(plant_0, left of, book_4)",
+        "(plant_0, left of, book_1)",
+        "(plant_0, right of, candle_1)",
+        "(plant_0, right of, candle_0)",
+        "(candle_1, behind, candle_0)",
+        "(candle_1, right of, vase_0)",
+        "(candle_0, right of, vase_0)"
+    ],
+    "scene_layout_json": {
+        "item_placement_zone": [
+            0.0,
+            98.7,
+            0.0,
+            32.0
+        ],
+        "objects": [
+            {
+                "instance": "book_1",
+                "size": [
+                    17.8,
+                    21.4,
+                    5.6
+                ],
+                "position": [
+                    87.8,
+                    20.2,
+                    5.8
+                ],
+                "z_rotation": 0.0,
+                "description": "A closed rectangular book with a dark blue cover, white label, colorful bookmarks, and brown cord."
+            },
+            {
+                "instance": "book_0",
+                "size": [
+                    17.3,
+                    21.2,
+                    5.5
+                ],
+                "position": [
+                    15.6,
+                    19.9,
+                    2.8
+                ],
+                "z_rotation": 0.0,
+                "description": "A closed rectangular book with a dark blue cover, white label, colorful bookmarks, and brown cord."
+            },
+            {
+                "instance": "book_2",
+                "size": [
+                    16.4,
+                    19.8,
+                    4.5
+                ],
+                "position": [
+                    15.1,
+                    19.9,
+                    7.9
+                ],
+                "z_rotation": 0.0,
+                "description": "Three books stacked horizontally with varying cover designs, colors, and distinct spine artwork."
+            },
+            {
+                "instance": "vase_0",
+                "size": [
+                    15.6,
+                    15.5,
+                    17.3
+                ],
+                "position": [
+                    16.0,
+                    20.2,
+                    18.8
+                ],
+                "z_rotation": 0.0,
+                "description": "Round vase with concentric ridges, flared neck, wider base, matte finish, subtle texture."
+            },
+            {
+                "instance": "book_3",
+                "size": [
+                    14.3,
+                    17.8,
+                    5.1
+                ],
+                "position": [
+                    43.8,
+                    17.2,
+                    2.6
+                ],
+                "z_rotation": 0.0,
+                "description": "Wooden book, flat rectangular shape, textured spine, shiny cover, light-colored pages, classic design."
+            },
+            {
+                "instance": "plant_0",
+                "size": [
+                    11.8,
+                    13.1,
+                    25.2
+                ],
+                "position": [
+                    67.4,
+                    22.6,
+                    9.1
+                ],
+                "z_rotation": 0.0,
+                "description": "Small potted plant with vibrant green leaves in a simple beige ceramic pot."
+            },
+            {
+                "instance": "book_4",
+                "size": [
+                    14.2,
+                    17.6,
+                    4.8
+                ],
+                "position": [
+                    87.2,
+                    20.5,
+                    11.2
+                ],
+                "z_rotation": 0.0,
+                "description": "A closed rectangular book with a dark blue cover, white label, colorful bookmarks, and brown cord."
+            },
+            {
+                "instance": "candle_1",
+                "size": [
+                    7.7,
+                    7.8,
+                    11.3
+                ],
+                "position": [
+                    31.4,
+                    19.2,
+                    5.7
+                ],
+                "z_rotation": 0.0,
+                "description": "Cylindrical candle, smooth white surface, dripping wax exterior, straight shape, rounded top."
+            },
+            {
+                "instance": "candle_0",
+                "size": [
+                    6.4,
+                    6.4,
+                    9.4
+                ],
+                "position": [
+                    27.0,
+                    12.9,
+                    4.7
+                ],
+                "z_rotation": 0.0,
+                "description": "Cylindrical candle, smooth white surface, dripping wax exterior, straight shape, rounded top."
+            }
+        ]
+    }
+}

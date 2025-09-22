@@ -1,0 +1,254 @@
+{
+    "prompt_instructions": "You are an expert designing a 3D scene layout on tabletop from an embodied task description. Output a reasoning process, a scene graph text, and a tabletop layout JSON.\n**Spatial definition:**:\n1. Coordinate System: Origin at tabletop's proximal top-left (0, 0, 0). x-axis right (+), y-axis from proximal to distal (+), z-axis up (+). Observer at -y, looking +y.\n2. Direction Mappings: Direction Mappings: Front (small y), Back (large y), Left (small x), Right (large x), Facing based on z-axis rotation. (e.g., \"face to front\" points towards the observer, i.e., the -y direction). |\n3. Spatial Relationship\n    - Position (Nine-Grid): x (left/middle/right) + y (front/middle/back).\n    - Horizontal: Compare x/y for left/right, front/back. Keep closest pairs, remove duals.\n    - Vertical: Compare z for above/below. Keep closest pairs, remove duals.\n    - Containment: Compare z and x/y overlap for inside.\n\n**Input:** JSON object with keys: `Environment` (string), \"item_placement_zone\": [X_min, X_max, Y_min, Y_max], /* cm */, 'sink_zone': [X_min, X_max, Y_min, Y_max], /* cm */(Only exist when it is a bathroom vanity), `Task` (string), `Goal` (list[str]), `Action Sequence` (list[str]), `Objects` (list[str] - types).\n\n**Processing & Scene Graph:**\n1.  **Analyze Task:** Understand the input JSON.\n2.  **Identify Objects:** List **Core Task Objects** (involved in `Objects`/`Goal`/`Action Sequence`) and **Environment Objects** (draw from `Environment`, more is better). Note types/quantities. Assign instance IDs (e.g., `pen_0`).\n3.  **Reasoning Paragraph:** Write a paragraph explaining initial object placement based on task analysis. Include:\n    *   Intro sentence (goal: layout generation; total object count).\n    *   Core Task Objects list (counts & instance IDs).\n    *   Environment Objects list (counts & instance IDs).\n    *   Placement Reasoning Paragraph: A coherent paragraph of detailed scene description, including the objects, their positions, and the overall layout of the tabletop infered from the given `environment`/`Goal`\n4.  **Scene Graph Text:** Based *only* on reasoning, generate scene graph text:\n    *   Nodes: 1. `(instance_id, is at, Position (Nine-Grid))` per object. 2. `(instance_id, face to, direction)` per object.\n    *   Edges: Salient `(subject_id, relation, object_id)` (e.g., `left of`). Avoid redundancy. Each triplet on a new line. Relation includes Containment/Vertical/Horizontal classes.\n\n**Output Format (Strict Order):**\n1.  Reasoning Paragraph (from Step 3).\n2.  Scene Graph Text (from Step 4, newline separated triplets).\n3.  The exact text block:\nTherefore, the scene layout is:\n**Final Answer**\n\n4.  Scene Layout JSON (immediately following **Final Answer**, no extra text before/after).\n\n**JSON Format:**\n```json\n{ \"item_placement_zone\": /* follow the input `item_placement_zone` */\n  \"sink_zone\": /* follow the input `sink_zone` */ (if not present, do not output this key)\n  \"objects\": [\n    {\n      \"instance\": \"type_instance_id\", /* e.g., pen_0 */\n      \"description\": \"Brief text.\",\n      \"z_rotation\": 0.0, /* degrees */ (z_rotation 0 means the object is facing the observer)(consider the bbox after rotation, collision, and other factor)\n      \"size\": [width, depth, height], /* cm */\n      \"position\": [x, y, z] /* cm, center coords, Calculate Z based on support: Z ≈ height/2 if on table, else account for \"inside\" or \"on the top of\" relation. */\n    }\n    /* ... more objects */ (object order should from large size to small size)\n  ]\n}\n```\n-   Use consistent instance IDs from Step 2.\n-   Provide reasonable object `size` estimates.\n-   Ensure valid JSON structure.\n\nGenerate the three output parts consecutively as specified. The input embodied task description is as follows:",
+    "input_task_description": {
+        "Environment": "A cooking tabletop with a stovetop, cutting board, bowl, plates, oranges, spoons, jars, and a green bottle arranged for meal prep.",
+        "item_placement_zone": [
+            0.0,
+            113.1,
+            0.0,
+            63.8
+        ],
+        "Task": "Prepare a serving area with bowl, plates, and oranges",
+        "Goal": [
+            "Pick up the bowl and place it on the cutting board",
+            "Pick up the stack of plates and place them next to the bowl on the cutting board",
+            "Pick up the oranges and arrange them neatly around the bowl and plates on the cutting board"
+        ],
+        "Objects cluster": [
+            "Bowl",
+            "Dinner Plates",
+            "Oranges",
+            "Cutting Board"
+        ]
+    },
+    "reasoning_paragraph": "The goal is to determine the initial object arrangement based on the provided task and scene description. The scene suggests a typical cooking or meal preparation setup on a tabletop, with various objects arranged to facilitate easy access and functional use. The core task objects include a bowl, a stack of dinner plates, and oranges, which are central to the scene's purpose. Additionally, there are other objects such as a stovetop, a cutting board, spoons, jars, and a green bottle, which serve as environment objects supporting the cooking activity. The scene layout indicates that the stovetop is positioned towards the middle-left, with the cutting board placed centrally on the table, serving as the main workspace. The bowl is located near the center, directly in front of the user, with the stack of plates nearby, ready to be placed on the cutting board. The oranges are arranged around the bowl and plates, with some positioned to the left and others behind the main objects, creating a balanced and accessible setup. The spoons, jars, and the green bottle are placed towards the right side, with the jars slightly to the right of the cutting board and the bottle further right, maintaining a clear division between the workspace and storage items. The overall layout emphasizes accessibility and organization, with objects spaced to prevent interference during the task. Based on this task analysis, the scene graph is arranged as follows:",
+    "scene_graph": [
+        "(cutting_board_0, is at, center)",
+        "(cutting_board_0, face to, front)",
+        "(cooking_pot_0, is at, middle_left)",
+        "(cooking_pot_0, face to, front)",
+        "(bowl_0, is at, center)",
+        "(bowl_0, face to, front)",
+        "(plates_0, is at, center)",
+        "(plates_0, face to, front)",
+        "(spoon_1, is at, middle_right)",
+        "(spoon_1, face to, right)",
+        "(jar_0, is at, middle_right)",
+        "(jar_0, face to, front)",
+        "(jar_1, is at, center)",
+        "(jar_1, face to, front)",
+        "(spoon_0, is at, middle_right)",
+        "(spoon_0, face to, right)",
+        "(orange_0, is at, center)",
+        "(orange_0, face to, front)",
+        "(orange_1, is at, middle_left)",
+        "(orange_1, face to, front)",
+        "(orange_2, is at, center)",
+        "(orange_2, face to, front)",
+        "(cutting_board_0, in front of, bowl_0)",
+        "(cutting_board_0, in front of, plates_0)",
+        "(cutting_board_0, left of, orange_2)",
+        "(cutting_board_0, right of, cooking_pot_0)",
+        "(cutting_board_0, right of, orange_0)",
+        "(cooking_pot_0, in front of, orange_0)",
+        "(cooking_pot_0, in front of, orange_1)",
+        "(cooking_pot_0, left of, bowl_0)",
+        "(plates_0, left of, orange_2)",
+        "(plates_0, right of, bowl_0)",
+        "(plates_0, left of, jar_1)",
+        "(plates_0, left of, jar_0)",
+        "(spoon_1, right of, spoon_0)",
+        "(spoon_1, right of, jar_1)",
+        "(spoon_1, behind, jar_0)",
+        "(spoon_1, right of, orange_2)",
+        "(spoon_1, right of, plates_0)",
+        "(jar_0, in front of, jar_1)",
+        "(jar_0, right of, orange_2)",
+        "(jar_1, behind, orange_2)",
+        "(spoon_0, right of, jar_1)",
+        "(spoon_0, behind, jar_0)",
+        "(spoon_0, right of, orange_2)",
+        "(spoon_0, right of, plates_0)",
+        "(orange_0, right of, orange_1)",
+        "(orange_0, left of, bowl_0)",
+        "(orange_0, left of, plates_0)",
+        "(orange_1, left of, bowl_0)",
+        "(orange_1, left of, cutting_board_0)",
+        "(orange_1, left of, plates_0)"
+    ],
+    "scene_layout_json": {
+        "item_placement_zone": [
+            0.0,
+            113.1,
+            0.0,
+            63.8
+        ],
+        "objects": [
+            {
+                "instance": "cutting_board_0",
+                "size": [
+                    38.2,
+                    28.7,
+                    1.9
+                ],
+                "position": [
+                    53.9,
+                    24.5,
+                    1.0
+                ],
+                "z_rotation": 0.0,
+                "description": "Wooden chopping board, smooth, rectangular, cut-out handle, visible wood grain, natural finish."
+            },
+            {
+                "instance": "cooking_pot_0",
+                "size": [
+                    26.0,
+                    20.8,
+                    11.6
+                ],
+                "position": [
+                    19.2,
+                    26.9,
+                    5.8
+                ],
+                "z_rotation": 0.0,
+                "description": "Round metallic pot with a smooth surface, shiny finish, and two side handles."
+            },
+            {
+                "instance": "bowl_0",
+                "size": [
+                    20.5,
+                    20.5,
+                    6.7
+                ],
+                "position": [
+                    49.0,
+                    32.2,
+                    5.9
+                ],
+                "z_rotation": 0.0,
+                "description": "White porcelain bowl, small, smooth surface, rounded shape, slightly raised base."
+            },
+            {
+                "instance": "plates_0",
+                "size": [
+                    16.8,
+                    16.8,
+                    1.7
+                ],
+                "position": [
+                    67.3,
+                    47.4,
+                    0.8
+                ],
+                "z_rotation": 0.0,
+                "description": "Round ceramic plate, dark blue with floral design, smooth glossy surface, slight lip, plain white underside."
+            },
+            {
+                "instance": "spoon_1",
+                "size": [
+                    26.0,
+                    5.8,
+                    1.3
+                ],
+                "position": [
+                    105.0,
+                    47.2,
+                    0.7
+                ],
+                "z_rotation": 88.9,
+                "description": "Slender wooden spoon with smooth finish, long tapered handle, rounded deep bowl, natural wood grain."
+            },
+            {
+                "instance": "jar_0",
+                "size": [
+                    12.5,
+                    12.5,
+                    17.9
+                ],
+                "position": [
+                    100.4,
+                    25.3,
+                    8.9
+                ],
+                "z_rotation": 0.0,
+                "description": "Glass jar with transparent cylindrical body and metallic lid; surface shows signs of wear."
+            },
+            {
+                "instance": "jar_1",
+                "size": [
+                    12.4,
+                    12.4,
+                    17.6
+                ],
+                "position": [
+                    90.1,
+                    48.7,
+                    8.9
+                ],
+                "z_rotation": 0.0,
+                "description": "Glass jar with transparent cylindrical body and metallic lid; surface shows signs of wear."
+            },
+            {
+                "instance": "spoon_0",
+                "size": [
+                    25.3,
+                    5.6,
+                    1.3
+                ],
+                "position": [
+                    100.3,
+                    47.4,
+                    0.6
+                ],
+                "z_rotation": 89.2,
+                "description": "Slender wooden spoon with smooth finish, long tapered handle, rounded deep bowl, natural wood grain."
+            },
+            {
+                "instance": "orange_0",
+                "size": [
+                    10.4,
+                    10.2,
+                    10.8
+                ],
+                "position": [
+                    22.4,
+                    48.9,
+                    5.4
+                ],
+                "z_rotation": 0.0,
+                "description": "Bright yellow orange, round shape, smooth texture, small dimpled top, slightly bumpy surface."
+            },
+            {
+                "instance": "orange_1",
+                "size": [
+                    9.9,
+                    9.7,
+                    10.2
+                ],
+                "position": [
+                    12.2,
+                    50.9,
+                    5.1
+                ],
+                "z_rotation": 0.0,
+                "description": "Bright yellow orange, round shape, smooth texture, small dimpled top, slightly bumpy surface."
+            },
+            {
+                "instance": "orange_2",
+                "size": [
+                    9.6,
+                    9.5,
+                    9.0
+                ],
+                "position": [
+                    76.9,
+                    36.1,
+                    4.5
+                ],
+                "z_rotation": 0.0,
+                "description": "Spherical, vibrant orange with textured dimples, glossy surface, and small stem on top."
+            }
+        ]
+    }
+}

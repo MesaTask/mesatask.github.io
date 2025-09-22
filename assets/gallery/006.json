@@ -1,0 +1,217 @@
+{
+    "prompt_instructions": "You are an expert designing a 3D scene layout on tabletop from an embodied task description. Output a reasoning process, a scene graph text, and a tabletop layout JSON.\n**Spatial definition:**:\n1. Coordinate System: Origin at tabletop's proximal top-left (0, 0, 0). x-axis right (+), y-axis from proximal to distal (+), z-axis up (+). Observer at -y, looking +y.\n2. Direction Mappings: Direction Mappings: Front (small y), Back (large y), Left (small x), Right (large x), Facing based on z-axis rotation. (e.g., \"face to front\" points towards the observer, i.e., the -y direction). |\n3. Spatial Relationship\n    - Position (Nine-Grid): x (left/middle/right) + y (front/middle/back).\n    - Horizontal: Compare x/y for left/right, front/back. Keep closest pairs, remove duals.\n    - Vertical: Compare z for above/below. Keep closest pairs, remove duals.\n    - Containment: Compare z and x/y overlap for inside.\n\n**Input:** JSON object with keys: `Environment` (string), \"item_placement_zone\": [X_min, X_max, Y_min, Y_max], /* cm */, 'sink_zone': [X_min, X_max, Y_min, Y_max], /* cm */(Only exist when it is a bathroom vanity), `Task` (string), `Goal` (list[str]), `Action Sequence` (list[str]), `Objects` (list[str] - types).\n\n**Processing & Scene Graph:**\n1.  **Analyze Task:** Understand the input JSON.\n2.  **Identify Objects:** List **Core Task Objects** (involved in `Objects`/`Goal`/`Action Sequence`) and **Environment Objects** (draw from `Environment`, more is better). Note types/quantities. Assign instance IDs (e.g., `pen_0`).\n3.  **Reasoning Paragraph:** Write a paragraph explaining initial object placement based on task analysis. Include:\n    *   Intro sentence (goal: layout generation; total object count).\n    *   Core Task Objects list (counts & instance IDs).\n    *   Environment Objects list (counts & instance IDs).\n    *   Placement Reasoning Paragraph: A coherent paragraph of detailed scene description, including the objects, their positions, and the overall layout of the tabletop infered from the given `environment`/`Goal`\n4.  **Scene Graph Text:** Based *only* on reasoning, generate scene graph text:\n    *   Nodes: 1. `(instance_id, is at, Position (Nine-Grid))` per object. 2. `(instance_id, face to, direction)` per object.\n    *   Edges: Salient `(subject_id, relation, object_id)` (e.g., `left of`). Avoid redundancy. Each triplet on a new line. Relation includes Containment/Vertical/Horizontal classes.\n\n**Output Format (Strict Order):**\n1.  Reasoning Paragraph (from Step 3).\n2.  Scene Graph Text (from Step 4, newline separated triplets).\n3.  The exact text block:\nTherefore, the scene layout is:\n**Final Answer**\n\n4.  Scene Layout JSON (immediately following **Final Answer**, no extra text before/after).\n\n**JSON Format:**\n```json\n{ \"item_placement_zone\": /* follow the input `item_placement_zone` */\n  \"sink_zone\": /* follow the input `sink_zone` */ (if not present, do not output this key)\n  \"objects\": [\n    {\n      \"instance\": \"type_instance_id\", /* e.g., pen_0 */\n      \"description\": \"Brief text.\",\n      \"z_rotation\": 0.0, /* degrees */ (z_rotation 0 means the object is facing the observer)(consider the bbox after rotation, collision, and other factor)\n      \"size\": [width, depth, height], /* cm */\n      \"position\": [x, y, z] /* cm, center coords, Calculate Z based on support: Z ≈ height/2 if on table, else account for \"inside\" or \"on the top of\" relation. */\n    }\n    /* ... more objects */ (object order should from large size to small size)\n  ]\n}\n```\n-   Use consistent instance IDs from Step 2.\n-   Provide reasonable object `size` estimates.\n-   Ensure valid JSON structure.\n\nGenerate the three output parts consecutively as specified. The input embodied task description is as follows:",
+    "input_task_description": {
+        "Environment": "A tabletop with a central sink, left side decorated with plants and grooming bottles, right side with towel and hairdryer.",
+        "item_placement_zone": [
+            0.0,
+            187.0,
+            0.0,
+            52.3
+        ],
+        "sink_zone": [
+            68.7,
+            127.5,
+            7.4,
+            46.6
+        ],
+        "Task": "Organize grooming items by placing lotion bottles near the towel.",
+        "Goal": [
+            "Pick lotion bottle 1 from left cluster",
+            "Place lotion bottle 1 near the towel on the right side",
+            "Pick lotion bottle 2 from left cluster",
+            "Place lotion bottle 2 near lotion bottle 1 by the towel"
+        ],
+        "Objects cluster": [
+            "Lotion Bottles",
+            "Towel"
+        ]
+    },
+    "reasoning_paragraph": "The goal is to determine the setup based on the task of organizing grooming items on a tabletop. The task suggests a grooming station, likely in a bathroom or vanity area, where various personal care products are arranged for easy access. \n\n**Core Task Objects:**  \nLotion Bottles(2), Towel(1)\n\n**Environment Objects:**  \nPotted Plant(1), Hairdryer(1), Hairbrush(1), Soap Dispenser(2)\n\nThe tabletop features a central sink, with a well-organized arrangement of grooming items. On the left side, there are two potted plants that add a touch of greenery, positioned next to several grooming bottles, including two with pump dispensers. These bottles are clustered together, making them easily accessible for use. Adjacent to the plants, a small container and a yellow bottle are placed, creating a cohesive left side. On the right side of the sink, a neatly folded towel is positioned, providing a convenient spot for drying hands or hair. A hairdryer lies next to the towel, angled slightly for easy reach, while a hairbrush is placed further to the right, ensuring that all grooming tools are within arm's reach without cluttering the space. This layout promotes efficiency and ease of use, allowing for a smooth grooming experience. Based on this task analysis, the scene graph is arranged as follows:",
+    "scene_graph": [
+        "(towel_1, is at, middle_right)",
+        "(towel_1, face to, front_right)",
+        "(hairdryer_0, is at, middle_right)",
+        "(hairdryer_0, face to, front)",
+        "(plant_1, is at, middle_left)",
+        "(plant_1, face to, front)",
+        "(brush_0, is at, middle_right)",
+        "(brush_0, face to, front)",
+        "(soap_dispenser_lotion_bottle_0, is at, center)",
+        "(soap_dispenser_lotion_bottle_0, face to, front)",
+        "(soap_dispenser_0, is at, center)",
+        "(soap_dispenser_0, face to, front)",
+        "(lotion_bottle_2, is at, middle_left)",
+        "(lotion_bottle_2, face to, front)",
+        "(lotion_bottle_1, is at, middle_left)",
+        "(lotion_bottle_1, face to, front)",
+        "(lotion_bottle_0, is at, center)",
+        "(lotion_bottle_0, face to, front)",
+        "(towel_1, in front of, hairdryer_0)",
+        "(towel_1, in front of, brush_0)",
+        "(towel_1, right of, lotion_bottle_0)",
+        "(hairdryer_0, left of, brush_0)",
+        "(hairdryer_0, right of, lotion_bottle_0)",
+        "(plant_1, behind, lotion_bottle_1)",
+        "(plant_1, left of, soap_dispenser_lotion_bottle_0)",
+        "(plant_1, right of, lotion_bottle_2)",
+        "(plant_1, left of, soap_dispenser_0)",
+        "(brush_0, right of, lotion_bottle_0)",
+        "(soap_dispenser_lotion_bottle_0, left of, soap_dispenser_0)",
+        "(soap_dispenser_lotion_bottle_0, right of, lotion_bottle_1)",
+        "(soap_dispenser_lotion_bottle_0, right of, lotion_bottle_2)",
+        "(soap_dispenser_0, right of, lotion_bottle_1)",
+        "(soap_dispenser_0, right of, lotion_bottle_2)",
+        "(lotion_bottle_2, left of, lotion_bottle_1)"
+    ],
+    "scene_layout_json": {
+        "item_placement_zone": [
+            0.0,
+            187.0,
+            0.0,
+            52.3
+        ],
+        "sink_zone": [
+            68.7,
+            127.5,
+            7.4,
+            46.6
+        ],
+        "objects": [
+            {
+                "instance": "towel_1",
+                "size": [
+                    14.7,
+                    21.7,
+                    8.0
+                ],
+                "position": [
+                    164.9,
+                    23.2,
+                    4.0
+                ],
+                "z_rotation": 28.9,
+                "description": "Folded white rectangular bath towel with soft, plush texture and subtle edge pattern."
+            },
+            {
+                "instance": "hairdryer_0",
+                "size": [
+                    20.3,
+                    31.8,
+                    11.3
+                ],
+                "position": [
+                    157.7,
+                    42.8,
+                    5.6
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek hair dryer with a smooth body, distinct handle, matte finish, and black nozzle."
+            },
+            {
+                "instance": "plant_1",
+                "size": [
+                    15.5,
+                    17.3,
+                    33.3
+                ],
+                "position": [
+                    25.3,
+                    41.6,
+                    12.0
+                ],
+                "z_rotation": 0.0,
+                "description": "Small potted plant with vibrant green leaves in a simple beige ceramic pot."
+            },
+            {
+                "instance": "brush_0",
+                "size": [
+                    8.4,
+                    26.0,
+                    4.6
+                ],
+                "position": [
+                    173.9,
+                    40.6,
+                    2.2
+                ],
+                "z_rotation": 0.0,
+                "description": "Hairbrush with an elongated, curved shape, smooth handle, and densely packed bristles."
+            },
+            {
+                "instance": "soap_dispenser_lotion_bottle_0",
+                "size": [
+                    10.1,
+                    12.4,
+                    21.6
+                ],
+                "position": [
+                    38.4,
+                    41.4,
+                    10.8
+                ],
+                "z_rotation": 0.0,
+                "description": "Cylindrical soap dispenser with a shiny metallic pump and frosted glass body, vintage look."
+            },
+            {
+                "instance": "soap_dispenser_0",
+                "size": [
+                    10.4,
+                    10.4,
+                    39.7
+                ],
+                "position": [
+                    49.5,
+                    41.8,
+                    19.8
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek, cylindrical soap dispenser made of durable white plastic with a shiny chrome pump."
+            },
+            {
+                "instance": "lotion_bottle_2",
+                "size": [
+                    7.7,
+                    7.7,
+                    17.9
+                ],
+                "position": [
+                    7.4,
+                    30.2,
+                    9.0
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek, modern cosmetic bottle; cylindrical shape, glossy white texture, black dispenser nozzle."
+            },
+            {
+                "instance": "lotion_bottle_1",
+                "size": [
+                    7.7,
+                    7.7,
+                    17.9
+                ],
+                "position": [
+                    20.4,
+                    30.0,
+                    9.0
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek, modern cosmetic bottle; cylindrical shape, glossy white texture, black dispenser nozzle."
+            },
+            {
+                "instance": "lotion_bottle_0",
+                "size": [
+                    8.8,
+                    4.3,
+                    18.6
+                ],
+                "position": [
+                    141.4,
+                    43.2,
+                    9.2
+                ],
+                "z_rotation": 0.0,
+                "description": "Tall, cylindrical, smooth surface, pastel colors, slightly tapered base, labeled with brand information."
+            }
+        ]
+    }
+}

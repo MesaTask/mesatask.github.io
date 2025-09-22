@@ -1,0 +1,275 @@
+{
+    "prompt_instructions": "You are an expert designing a 3D scene layout on tabletop from an embodied task description. Output a reasoning process, a scene graph text, and a tabletop layout JSON.\n**Spatial definition:**:\n1. Coordinate System: Origin at tabletop's proximal top-left (0, 0, 0). x-axis right (+), y-axis from proximal to distal (+), z-axis up (+). Observer at -y, looking +y.\n2. Direction Mappings: Direction Mappings: Front (small y), Back (large y), Left (small x), Right (large x), Facing based on z-axis rotation. (e.g., \"face to front\" points towards the observer, i.e., the -y direction). |\n3. Spatial Relationship\n    - Position (Nine-Grid): x (left/middle/right) + y (front/middle/back).\n    - Horizontal: Compare x/y for left/right, front/back. Keep closest pairs, remove duals.\n    - Vertical: Compare z for above/below. Keep closest pairs, remove duals.\n    - Containment: Compare z and x/y overlap for inside.\n\n**Input:** JSON object with keys: `Environment` (string), \"item_placement_zone\": [X_min, X_max, Y_min, Y_max], /* cm */, 'sink_zone': [X_min, X_max, Y_min, Y_max], /* cm */(Only exist when it is a bathroom vanity), `Task` (string), `Goal` (list[str]), `Action Sequence` (list[str]), `Objects` (list[str] - types).\n\n**Processing & Scene Graph:**\n1.  **Analyze Task:** Understand the input JSON.\n2.  **Identify Objects:** List **Core Task Objects** (involved in `Objects`/`Goal`/`Action Sequence`) and **Environment Objects** (draw from `Environment`, more is better). Note types/quantities. Assign instance IDs (e.g., `pen_0`).\n3.  **Reasoning Paragraph:** Write a paragraph explaining initial object placement based on task analysis. Include:\n    *   Intro sentence (goal: layout generation; total object count).\n    *   Core Task Objects list (counts & instance IDs).\n    *   Environment Objects list (counts & instance IDs).\n    *   Placement Reasoning Paragraph: A coherent paragraph of detailed scene description, including the objects, their positions, and the overall layout of the tabletop infered from the given `environment`/`Goal`\n4.  **Scene Graph Text:** Based *only* on reasoning, generate scene graph text:\n    *   Nodes: 1. `(instance_id, is at, Position (Nine-Grid))` per object. 2. `(instance_id, face to, direction)` per object.\n    *   Edges: Salient `(subject_id, relation, object_id)` (e.g., `left of`). Avoid redundancy. Each triplet on a new line. Relation includes Containment/Vertical/Horizontal classes.\n\n**Output Format (Strict Order):**\n1.  Reasoning Paragraph (from Step 3).\n2.  Scene Graph Text (from Step 4, newline separated triplets).\n3.  The exact text block:\nTherefore, the scene layout is:\n**Final Answer**\n\n4.  Scene Layout JSON (immediately following **Final Answer**, no extra text before/after).\n\n**JSON Format:**\n```json\n{ \"item_placement_zone\": /* follow the input `item_placement_zone` */\n  \"sink_zone\": /* follow the input `sink_zone` */ (if not present, do not output this key)\n  \"objects\": [\n    {\n      \"instance\": \"type_instance_id\", /* e.g., pen_0 */\n      \"description\": \"Brief text.\",\n      \"z_rotation\": 0.0, /* degrees */ (z_rotation 0 means the object is facing the observer)(consider the bbox after rotation, collision, and other factor)\n      \"size\": [width, depth, height], /* cm */\n      \"position\": [x, y, z] /* cm, center coords, Calculate Z based on support: Z ≈ height/2 if on table, else account for \"inside\" or \"on the top of\" relation. */\n    }\n    /* ... more objects */ (object order should from large size to small size)\n  ]\n}\n```\n-   Use consistent instance IDs from Step 2.\n-   Provide reasonable object `size` estimates.\n-   Ensure valid JSON structure.\n\nGenerate the three output parts consecutively as specified. The input embodied task description is as follows:",
+    "input_task_description": {
+        "Environment": "A desk with a closed Dell laptop at center, surrounded by a notepad, pens, stapler, plant, bottle, lamp, pencil holder, smartphone, mouse, sticky note, and paperclip.",
+        "item_placement_zone": [
+            0.0,
+            101.0,
+            0.0,
+            56.7
+        ],
+        "Task": "Clear the center workspace by moving the bottle, plant, and stapler to the left side.",
+        "Goal": [
+            "Pick the bottle and place it to the far left of the desk",
+            "Pick the plant and place it next to the bottle",
+            "Pick the stapler and place it in front of the plant"
+        ],
+        "Objects cluster": [
+            "Bottle",
+            "Plant",
+            "Stapler"
+        ]
+    },
+    "reasoning_paragraph": "The goal is to determine the initial object arrangement on the desk based on the provided task. The scene suggests a typical office or workspace environment, with various objects organized for productivity. The core task objects include a bottle, a plant, and a stapler, which are the primary items involved in the task. Other objects present in the scene include a laptop, notepad, pens, smartphone, mouse, sticky note, paperclip, lamp, and pencil holder, all arranged to facilitate easy access and a balanced layout. The laptop is positioned centrally on the desk, facing forward, with the notepad and pens placed nearby, indicating a workspace setup. The plant is situated on the left side of the laptop, with the bottle initially placed at the center, close to the laptop, and the stapler positioned in front of the plant, creating a logical flow for the task. The lamp is on the middle right, angled to illuminate the workspace, while the smartphone and mouse are placed towards the right, with the sticky note and paperclip nearby, ensuring they do not interfere with the main objects. The overall arrangement maintains accessibility and avoids clutter, with objects spaced to support the task of moving the bottle, plant, and stapler to the left side. Based on this task analysis, the scene graph is arranged as follows:",
+    "scene_graph": [
+        "(laptop_0, is at, center)",
+        "(laptop_0, face to, front)",
+        "(lamp_0, is at, middle_right)",
+        "(lamp_0, face to, back)",
+        "(notepad_0, is at, center)",
+        "(notepad_0, face to, front)",
+        "(smartphone_0, is at, middle_right)",
+        "(smartphone_0, face to, front)",
+        "(pencil_holder_0, is at, back_middle)",
+        "(pencil_holder_0, face to, front)",
+        "(plant_0, is at, middle_left)",
+        "(plant_0, face to, front_left)",
+        "(sticky_note_0, is at, center)",
+        "(sticky_note_0, face to, front)",
+        "(mouse_0, is at, middle_right)",
+        "(mouse_0, face to, front)",
+        "(bottle_0, is at, center)",
+        "(bottle_0, face to, front)",
+        "(pen_0, is at, center)",
+        "(pen_0, face to, front)",
+        "(stapler_0, is at, center)",
+        "(stapler_0, face to, left)",
+        "(paperclip_0, is at, center)",
+        "(paperclip_0, face to, front)",
+        "(pen_0, above, notepad_0)",
+        "(laptop_0, right of, bottle_0)",
+        "(laptop_0, behind, notepad_0)",
+        "(laptop_0, behind, pen_0)",
+        "(laptop_0, right of, pencil_holder_0)",
+        "(laptop_0, behind, paperclip_0)",
+        "(lamp_0, right of, stapler_0)",
+        "(lamp_0, behind, mouse_0)",
+        "(lamp_0, behind, smartphone_0)",
+        "(notepad_0, left of, pen_0)",
+        "(notepad_0, left of, paperclip_0)",
+        "(notepad_0, right of, sticky_note_0)",
+        "(notepad_0, right of, bottle_0)",
+        "(notepad_0, left of, smartphone_0)",
+        "(smartphone_0, right of, paperclip_0)",
+        "(smartphone_0, right of, pen_0)",
+        "(smartphone_0, in front of, stapler_0)",
+        "(smartphone_0, left of, mouse_0)",
+        "(pencil_holder_0, behind, bottle_0)",
+        "(pencil_holder_0, right of, plant_0)",
+        "(pencil_holder_0, behind, sticky_note_0)",
+        "(plant_0, left of, bottle_0)",
+        "(plant_0, behind, sticky_note_0)",
+        "(plant_0, left of, laptop_0)",
+        "(sticky_note_0, in front of, bottle_0)",
+        "(sticky_note_0, left of, pen_0)",
+        "(sticky_note_0, left of, paperclip_0)",
+        "(mouse_0, right of, stapler_0)",
+        "(mouse_0, right of, paperclip_0)",
+        "(mouse_0, right of, notepad_0)",
+        "(bottle_0, left of, pen_0)",
+        "(stapler_0, behind, paperclip_0)",
+        "(stapler_0, behind, notepad_0)",
+        "(stapler_0, right of, laptop_0)",
+        "(paperclip_0, right of, pen_0)"
+    ],
+    "scene_layout_json": {
+        "item_placement_zone": [
+            0.0,
+            101.0,
+            0.0,
+            56.7
+        ],
+        "objects": [
+            {
+                "instance": "laptop_0",
+                "size": [
+                    32.4,
+                    31.8,
+                    25.4
+                ],
+                "position": [
+                    49.2,
+                    39.0,
+                    12.7
+                ],
+                "z_rotation": 0.0,
+                "description": "Laptop with a black keyboard, smooth light grey casing, and slim profile."
+            },
+            {
+                "instance": "lamp_0",
+                "size": [
+                    27.6,
+                    17.0,
+                    32.3
+                ],
+                "position": [
+                    88.3,
+                    44.2,
+                    16.1
+                ],
+                "z_rotation": -162.2,
+                "description": "Modern desk lamp with sleek metallic finish, adjustable arm, conical shade, round sturdy base."
+            },
+            {
+                "instance": "notepad_0",
+                "size": [
+                    16.8,
+                    23.4,
+                    1.1
+                ],
+                "position": [
+                    50.6,
+                    11.4,
+                    0.5
+                ],
+                "z_rotation": 0.0,
+                "description": "White ruled notepad, leather-bound top, perforated edges, rectangular shape, clean lined pages."
+            },
+            {
+                "instance": "smartphone_0",
+                "size": [
+                    9.2,
+                    18.7,
+                    0.8
+                ],
+                "position": [
+                    81.8,
+                    17.5,
+                    0.4
+                ],
+                "z_rotation": 0.0,
+                "description": "Smartphone with sleek rectangular shape, rounded corners, glass front, black with metal accents."
+            },
+            {
+                "instance": "pencil_holder_0",
+                "size": [
+                    10.9,
+                    10.9,
+                    20.8
+                ],
+                "position": [
+                    22.9,
+                    48.3,
+                    10.4
+                ],
+                "z_rotation": 0.0,
+                "description": "Cylindrical white ceramic holder with a smooth, glossy finish, filled with colored pencils."
+            },
+            {
+                "instance": "plant_0",
+                "size": [
+                    11.4,
+                    11.6,
+                    13.9
+                ],
+                "position": [
+                    13.9,
+                    37.5,
+                    7.0
+                ],
+                "z_rotation": -28.8,
+                "description": "Small potted plant with vibrant green, long slender leaves; textured, modern, minimalistic pot design."
+            },
+            {
+                "instance": "sticky_note_0",
+                "size": [
+                    10.9,
+                    11.0,
+                    1.6
+                ],
+                "position": [
+                    29.5,
+                    17.3,
+                    0.8
+                ],
+                "z_rotation": 0.0,
+                "description": "Yellow square sticky notes with black handwriting, slightly glossy paper finish."
+            },
+            {
+                "instance": "mouse_0",
+                "size": [
+                    7.4,
+                    11.2,
+                    4.6
+                ],
+                "position": [
+                    95.9,
+                    27.1,
+                    2.3
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek black computer mouse with smooth curves, multiple buttons, textured grip, illuminated scroll wheel."
+            },
+            {
+                "instance": "bottle_0",
+                "size": [
+                    9.7,
+                    9.7,
+                    16.2
+                ],
+                "position": [
+                    27.2,
+                    31.2,
+                    8.1
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek cylindrical plastic bottle with a narrow neck, dark opaque color, and printed labels."
+            },
+            {
+                "instance": "pen_0",
+                "size": [
+                    5.0,
+                    13.6,
+                    1.7
+                ],
+                "position": [
+                    53.4,
+                    12.3,
+                    1.7
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek black ballpoint pen with a smooth barrel, grip section, and shiny clip."
+            },
+            {
+                "instance": "stapler_0",
+                "size": [
+                    3.6,
+                    13.4,
+                    5.0
+                ],
+                "position": [
+                    73.1,
+                    32.4,
+                    2.5
+                ],
+                "z_rotation": -87.5,
+                "description": "Sleek, ergonomic stapler with a glossy red exterior and compact form."
+            },
+            {
+                "instance": "paperclip_0",
+                "size": [
+                    1.2,
+                    5.9,
+                    0.2
+                ],
+                "position": [
+                    62.0,
+                    11.6,
+                    0.1
+                ],
+                "z_rotation": 0.0,
+                "description": "A small metal paper clip, looped wire form, sleek, slender design with pointed ends."
+            }
+        ]
+    }
+}

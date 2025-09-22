@@ -1,0 +1,169 @@
+{
+    "prompt_instructions": "You are an expert designing a 3D scene layout on tabletop from an embodied task description. Output a reasoning process, a scene graph text, and a tabletop layout JSON.\n**Spatial definition:**:\n1. Coordinate System: Origin at tabletop's proximal top-left (0, 0, 0). x-axis right (+), y-axis from proximal to distal (+), z-axis up (+). Observer at -y, looking +y.\n2. Direction Mappings: Direction Mappings: Front (small y), Back (large y), Left (small x), Right (large x), Facing based on z-axis rotation. (e.g., \"face to front\" points towards the observer, i.e., the -y direction). |\n3. Spatial Relationship\n    - Position (Nine-Grid): x (left/middle/right) + y (front/middle/back).\n    - Horizontal: Compare x/y for left/right, front/back. Keep closest pairs, remove duals.\n    - Vertical: Compare z for above/below. Keep closest pairs, remove duals.\n    - Containment: Compare z and x/y overlap for inside.\n\n**Input:** JSON object with keys: `Environment` (string), \"item_placement_zone\": [X_min, X_max, Y_min, Y_max], /* cm */, 'sink_zone': [X_min, X_max, Y_min, Y_max], /* cm */(Only exist when it is a bathroom vanity), `Task` (string), `Goal` (list[str]), `Action Sequence` (list[str]), `Objects` (list[str] - types).\n\n**Processing & Scene Graph:**\n1.  **Analyze Task:** Understand the input JSON.\n2.  **Identify Objects:** List **Core Task Objects** (involved in `Objects`/`Goal`/`Action Sequence`) and **Environment Objects** (draw from `Environment`, more is better). Note types/quantities. Assign instance IDs (e.g., `pen_0`).\n3.  **Reasoning Paragraph:** Write a paragraph explaining initial object placement based on task analysis. Include:\n    *   Intro sentence (goal: layout generation; total object count).\n    *   Core Task Objects list (counts & instance IDs).\n    *   Environment Objects list (counts & instance IDs).\n    *   Placement Reasoning Paragraph: A coherent paragraph of detailed scene description, including the objects, their positions, and the overall layout of the tabletop infered from the given `environment`/`Goal`\n4.  **Scene Graph Text:** Based *only* on reasoning, generate scene graph text:\n    *   Nodes: 1. `(instance_id, is at, Position (Nine-Grid))` per object. 2. `(instance_id, face to, direction)` per object.\n    *   Edges: Salient `(subject_id, relation, object_id)` (e.g., `left of`). Avoid redundancy. Each triplet on a new line. Relation includes Containment/Vertical/Horizontal classes.\n\n**Output Format (Strict Order):**\n1.  Reasoning Paragraph (from Step 3).\n2.  Scene Graph Text (from Step 4, newline separated triplets).\n3.  The exact text block:\nTherefore, the scene layout is:\n**Final Answer**\n\n4.  Scene Layout JSON (immediately following **Final Answer**, no extra text before/after).\n\n**JSON Format:**\n```json\n{ \"item_placement_zone\": /* follow the input `item_placement_zone` */\n  \"sink_zone\": /* follow the input `sink_zone` */ (if not present, do not output this key)\n  \"objects\": [\n    {\n      \"instance\": \"type_instance_id\", /* e.g., pen_0 */\n      \"description\": \"Brief text.\",\n      \"z_rotation\": 0.0, /* degrees */ (z_rotation 0 means the object is facing the observer)(consider the bbox after rotation, collision, and other factor)\n      \"size\": [width, depth, height], /* cm */\n      \"position\": [x, y, z] /* cm, center coords, Calculate Z based on support: Z ≈ height/2 if on table, else account for \"inside\" or \"on the top of\" relation. */\n    }\n    /* ... more objects */ (object order should from large size to small size)\n  ]\n}\n```\n-   Use consistent instance IDs from Step 2.\n-   Provide reasonable object `size` estimates.\n-   Ensure valid JSON structure.\n\nGenerate the three output parts consecutively as specified. The input embodied task description is as follows:",
+    "input_task_description": {
+        "Environment": "A desk with a computer, keyboard, external hard drive, pen holder, notebooks, and books arranged on the surface.",
+        "item_placement_zone": [
+            0.0,
+            104.0,
+            0.0,
+            54.8
+        ],
+        "Task": "Clear the center workspace by moving external hard drive, pen holder, and notebooks to the right side",
+        "Goal": [
+            "Pick up external hard drive and place it right of the book",
+            "Pick up pen holder and place it right of the notebook book",
+            "Pick up notebook and place it on top of the notebook book"
+        ],
+        "Objects cluster": [
+            "External Hard Drive",
+            "Pen Holder",
+            "Notebook",
+            "Notebook Book",
+            "Book"
+        ]
+    },
+    "reasoning_paragraph": "The goal is to determine the initial object arrangement on the desk based on the provided task and scene description. The scene suggests a typical office or workspace environment, with various objects organized for functional use. The core task objects include an external hard drive, a pen holder, a notebook, a notebook book, and a book, totaling five items. Additional environment objects, such as the computer, keyboard, and other notebooks, are present to support the workspace setting. The layout appears to have the computer positioned centrally, with the keyboard directly in front of it, and the external hard drive placed on the left side of the desk. The pen holder is situated near the center, close to the notebooks and books, which are arranged towards the right side of the surface. The notebooks are stacked or placed in a manner that allows easy access, with one notebook positioned on top of another, and the external hard drive is located to the left of the book. The objects are spaced to facilitate the task of moving the external hard drive to the right of the book, the pen holder to the right of the notebook book, and the notebook onto the notebook book, ensuring a clear and accessible workspace. Based on this task analysis, the scene graph is arranged as follows:",
+    "scene_graph": [
+        "(computer_0, is at, center)",
+        "(computer_0, face to, front)",
+        "(book_0, is at, middle_right)",
+        "(book_0, face to, left)",
+        "(keyboard_0, is at, center)",
+        "(keyboard_0, face to, front)",
+        "(notebook_0, is at, center)",
+        "(notebook_0, face to, front)",
+        "(notebook_book_0, is at, center)",
+        "(notebook_book_0, face to, front)",
+        "(pen_holder_1, is at, center)",
+        "(pen_holder_1, face to, front)",
+        "(external_hard_drive_0, is at, middle_left)",
+        "(external_hard_drive_0, face to, front)",
+        "(computer_0, behind, keyboard_0)",
+        "(computer_0, right of, pen_holder_1)",
+        "(computer_0, left of, notebook_book_0)",
+        "(computer_0, left of, book_0)",
+        "(computer_0, right of, notebook_0)",
+        "(book_0, behind, notebook_book_0)",
+        "(keyboard_0, right of, notebook_0)",
+        "(keyboard_0, left of, notebook_book_0)",
+        "(keyboard_0, in front of, pen_holder_1)",
+        "(notebook_0, in front of, external_hard_drive_0)",
+        "(notebook_0, in front of, pen_holder_1)",
+        "(pen_holder_1, right of, external_hard_drive_0)"
+    ],
+    "scene_layout_json": {
+        "item_placement_zone": [
+            0.0,
+            104.0,
+            0.0,
+            54.8
+        ],
+        "objects": [
+            {
+                "instance": "computer_0",
+                "size": [
+                    45.1,
+                    18.2,
+                    32.8
+                ],
+                "position": [
+                    55.0,
+                    36.5,
+                    16.6
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek flat-screen monitor with a rectangular display, thin bezel, matte black finish, sturdy stand."
+            },
+            {
+                "instance": "book_0",
+                "size": [
+                    16.4,
+                    5.0,
+                    20.3
+                ],
+                "position": [
+                    90.2,
+                    41.9,
+                    10.2
+                ],
+                "z_rotation": -91.5,
+                "description": "Stack of books with textured black cover, white spine, brown bottom book, dark gray top book."
+            },
+            {
+                "instance": "keyboard_0",
+                "size": [
+                    36.2,
+                    10.6,
+                    2.3
+                ],
+                "position": [
+                    54.8,
+                    17.3,
+                    1.1
+                ],
+                "z_rotation": 0.0,
+                "description": "Rectangular computer keyboard with a matte black finish and flat, tactile feedback keys."
+            },
+            {
+                "instance": "notebook_0",
+                "size": [
+                    13.6,
+                    15.5,
+                    3.8
+                ],
+                "position": [
+                    22.4,
+                    21.8,
+                    1.8
+                ],
+                "z_rotation": 15.4,
+                "description": "Closed notebook, soft cover, rectangular shape, rounded edges, light pink/beige patterns, white spiral bindings."
+            },
+            {
+                "instance": "notebook_book_0",
+                "size": [
+                    13.8,
+                    15.1,
+                    3.6
+                ],
+                "position": [
+                    83.0,
+                    23.8,
+                    1.8
+                ],
+                "z_rotation": 16.1,
+                "description": "Closed notebook, soft cover, rectangular shape, rounded edges, light pink/beige patterns, white spiral bindings."
+            },
+            {
+                "instance": "pen_holder_1",
+                "size": [
+                    8.1,
+                    11.6,
+                    18.9
+                ],
+                "position": [
+                    27.7,
+                    41.3,
+                    9.4
+                ],
+                "z_rotation": 0.0,
+                "description": "Cylindrical pen holder with a metallic shine and a black base. Various colored pencils and pens."
+            },
+            {
+                "instance": "external_hard_drive_0",
+                "size": [
+                    7.3,
+                    14.2,
+                    2.0
+                ],
+                "position": [
+                    12.7,
+                    37.7,
+                    0.8
+                ],
+                "z_rotation": 0.0,
+                "description": "Rectangular external hard drive with a sleek, smooth surface and minimal branding."
+            }
+        ]
+    }
+}

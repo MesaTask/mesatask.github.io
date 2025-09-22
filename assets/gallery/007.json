@@ -1,0 +1,157 @@
+{
+    "prompt_instructions": "You are an expert designing a 3D scene layout on tabletop from an embodied task description. Output a reasoning process, a scene graph text, and a tabletop layout JSON.\n**Spatial definition:**:\n1. Coordinate System: Origin at tabletop's proximal top-left (0, 0, 0). x-axis right (+), y-axis from proximal to distal (+), z-axis up (+). Observer at -y, looking +y.\n2. Direction Mappings: Direction Mappings: Front (small y), Back (large y), Left (small x), Right (large x), Facing based on z-axis rotation. (e.g., \"face to front\" points towards the observer, i.e., the -y direction). |\n3. Spatial Relationship\n    - Position (Nine-Grid): x (left/middle/right) + y (front/middle/back).\n    - Horizontal: Compare x/y for left/right, front/back. Keep closest pairs, remove duals.\n    - Vertical: Compare z for above/below. Keep closest pairs, remove duals.\n    - Containment: Compare z and x/y overlap for inside.\n\n**Input:** JSON object with keys: `Environment` (string), \"item_placement_zone\": [X_min, X_max, Y_min, Y_max], /* cm */, 'sink_zone': [X_min, X_max, Y_min, Y_max], /* cm */(Only exist when it is a bathroom vanity), `Task` (string), `Goal` (list[str]), `Action Sequence` (list[str]), `Objects` (list[str] - types).\n\n**Processing & Scene Graph:**\n1.  **Analyze Task:** Understand the input JSON.\n2.  **Identify Objects:** List **Core Task Objects** (involved in `Objects`/`Goal`/`Action Sequence`) and **Environment Objects** (draw from `Environment`, more is better). Note types/quantities. Assign instance IDs (e.g., `pen_0`).\n3.  **Reasoning Paragraph:** Write a paragraph explaining initial object placement based on task analysis. Include:\n    *   Intro sentence (goal: layout generation; total object count).\n    *   Core Task Objects list (counts & instance IDs).\n    *   Environment Objects list (counts & instance IDs).\n    *   Placement Reasoning Paragraph: A coherent paragraph of detailed scene description, including the objects, their positions, and the overall layout of the tabletop infered from the given `environment`/`Goal`\n4.  **Scene Graph Text:** Based *only* on reasoning, generate scene graph text:\n    *   Nodes: 1. `(instance_id, is at, Position (Nine-Grid))` per object. 2. `(instance_id, face to, direction)` per object.\n    *   Edges: Salient `(subject_id, relation, object_id)` (e.g., `left of`). Avoid redundancy. Each triplet on a new line. Relation includes Containment/Vertical/Horizontal classes.\n\n**Output Format (Strict Order):**\n1.  Reasoning Paragraph (from Step 3).\n2.  Scene Graph Text (from Step 4, newline separated triplets).\n3.  The exact text block:\nTherefore, the scene layout is:\n**Final Answer**\n\n4.  Scene Layout JSON (immediately following **Final Answer**, no extra text before/after).\n\n**JSON Format:**\n```json\n{ \"item_placement_zone\": /* follow the input `item_placement_zone` */\n  \"sink_zone\": /* follow the input `sink_zone` */ (if not present, do not output this key)\n  \"objects\": [\n    {\n      \"instance\": \"type_instance_id\", /* e.g., pen_0 */\n      \"description\": \"Brief text.\",\n      \"z_rotation\": 0.0, /* degrees */ (z_rotation 0 means the object is facing the observer)(consider the bbox after rotation, collision, and other factor)\n      \"size\": [width, depth, height], /* cm */\n      \"position\": [x, y, z] /* cm, center coords, Calculate Z based on support: Z ≈ height/2 if on table, else account for \"inside\" or \"on the top of\" relation. */\n    }\n    /* ... more objects */ (object order should from large size to small size)\n  ]\n}\n```\n-   Use consistent instance IDs from Step 2.\n-   Provide reasonable object `size` estimates.\n-   Ensure valid JSON structure.\n\nGenerate the three output parts consecutively as specified. The input embodied task description is as follows:",
+    "input_task_description": {
+        "Environment": "A tabletop with a hand towel, mirror, and round container at the back middle and right.",
+        "item_placement_zone": [
+            0.0,
+            91.6,
+            0.0,
+            52.6
+        ],
+        "sink_zone": [
+            31.7,
+            62.9,
+            15.6,
+            36.4
+        ],
+        "Task": "Stack the hand towel and round container near the mirror.",
+        "Goal": [
+            "Pick the hand towel from middle right",
+            "Place the hand towel next to the mirror",
+            "Pick the round container from back right",
+            "Place the round container on top of the hand towel"
+        ],
+        "Objects cluster": [
+            "Hand Towel",
+            "Mirror",
+            "Round Container"
+        ]
+    },
+    "reasoning_paragraph": "The goal is to determine the setup based on the task. The task suggests a typical bathroom or grooming area setting, where items like towels, mirrors, and containers are commonly found. \n\n**Core Task Objects:** Hand Towel(1), Mirror(1), Round Container(1)\n\n**Environment Objects:** Potted Plant(1), Soap Dispenser(1), Cotton Pads(2)\n\nIn this scene, the arrangement of objects is designed for functionality and accessibility. The round mirror is positioned at the back middle, providing a clear view for grooming. To the left of the mirror, a small potted plant adds a decorative touch, while the soap dispenser is placed next to it, ensuring easy access during use. The hand towel is located on the middle right, allowing for convenient drying after washing hands. Adjacent to the hand towel, the round container is positioned at the back right, ready to be stacked on the towel as per the task instructions. The overall layout is organized, with sufficient space between items to prevent clutter and allow for smooth movement. This thoughtful arrangement supports the actions of picking and placing the items efficiently. Based on this task analysis, the scene graph is arranged as follows:",
+    "scene_graph": [
+        "(hand_towel_0, is at, middle_right)",
+        "(hand_towel_0, face to, back_left)",
+        "(mirror_0, is at, back_middle)",
+        "(mirror_0, face to, front)",
+        "(round_container_1, is at, back_right)",
+        "(round_container_1, face to, front)",
+        "(cotton_pads_0, is at, middle_left)",
+        "(cotton_pads_0, face to, front)",
+        "(soap_dispenser_0, is at, back_middle)",
+        "(soap_dispenser_0, face to, front)",
+        "(cotton_pads_1, is at, back_middle)",
+        "(cotton_pads_1, face to, front)",
+        "(hand_towel_0, in front of, cotton_pads_1)",
+        "(hand_towel_0, in front of, round_container_1)",
+        "(mirror_0, right of, soap_dispenser_0)",
+        "(mirror_0, left of, cotton_pads_1)",
+        "(round_container_1, right of, cotton_pads_1)",
+        "(cotton_pads_0, left of, soap_dispenser_0)"
+    ],
+    "scene_layout_json": {
+        "item_placement_zone": [
+            0.0,
+            91.6,
+            0.0,
+            52.6
+        ],
+        "sink_zone": [
+            31.7,
+            62.9,
+            15.6,
+            36.4
+        ],
+        "objects": [
+            {
+                "instance": "hand_towel_0",
+                "size": [
+                    9.5,
+                    29.8,
+                    10.4
+                ],
+                "position": [
+                    78.8,
+                    28.0,
+                    5.2
+                ],
+                "z_rotation": -131.5,
+                "description": "Rolled bath towel, soft plush texture, cylindrical shape, light gray with subtle sheen."
+            },
+            {
+                "instance": "mirror_0",
+                "size": [
+                    16.3,
+                    12.6,
+                    30.8
+                ],
+                "position": [
+                    47.9,
+                    46.5,
+                    15.4
+                ],
+                "z_rotation": 0.0,
+                "description": "Round vanity mirror with a gold frame and sleek stand."
+            },
+            {
+                "instance": "round_container_1",
+                "size": [
+                    13.7,
+                    13.7,
+                    8.2
+                ],
+                "position": [
+                    83.5,
+                    45.6,
+                    4.1
+                ],
+                "z_rotation": 0.0,
+                "description": "Cylindrical container with a smooth white body and a gray lid featuring a decorative pattern."
+            },
+            {
+                "instance": "cotton_pads_0",
+                "size": [
+                    10.7,
+                    10.6,
+                    13.7
+                ],
+                "position": [
+                    11.6,
+                    42.8,
+                    6.8
+                ],
+                "z_rotation": 0.0,
+                "description": "White cylindrical paper towel roll with a smooth surface and multiple layers of absorbent paper."
+            },
+            {
+                "instance": "soap_dispenser_0",
+                "size": [
+                    7.3,
+                    7.3,
+                    27.9
+                ],
+                "position": [
+                    28.4,
+                    44.6,
+                    13.9
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek, cylindrical soap dispenser made of durable white plastic with a shiny chrome pump."
+            },
+            {
+                "instance": "cotton_pads_1",
+                "size": [
+                    7.3,
+                    7.3,
+                    10.6
+                ],
+                "position": [
+                    70.2,
+                    45.6,
+                    5.3
+                ],
+                "z_rotation": 0.0,
+                "description": "Cylindrical roll of white paper with a slightly textured surface and smooth edge."
+            }
+        ]
+    }
+}

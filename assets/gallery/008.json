@@ -1,0 +1,278 @@
+{
+    "prompt_instructions": "You are an expert designing a 3D scene layout on tabletop from an embodied task description. Output a reasoning process, a scene graph text, and a tabletop layout JSON.\n**Spatial definition:**:\n1. Coordinate System: Origin at tabletop's proximal top-left (0, 0, 0). x-axis right (+), y-axis from proximal to distal (+), z-axis up (+). Observer at -y, looking +y.\n2. Direction Mappings: Direction Mappings: Front (small y), Back (large y), Left (small x), Right (large x), Facing based on z-axis rotation. (e.g., \"face to front\" points towards the observer, i.e., the -y direction). |\n3. Spatial Relationship\n    - Position (Nine-Grid): x (left/middle/right) + y (front/middle/back).\n    - Horizontal: Compare x/y for left/right, front/back. Keep closest pairs, remove duals.\n    - Vertical: Compare z for above/below. Keep closest pairs, remove duals.\n    - Containment: Compare z and x/y overlap for inside.\n\n**Input:** JSON object with keys: `Environment` (string), \"item_placement_zone\": [X_min, X_max, Y_min, Y_max], /* cm */, 'sink_zone': [X_min, X_max, Y_min, Y_max], /* cm */(Only exist when it is a bathroom vanity), `Task` (string), `Goal` (list[str]), `Action Sequence` (list[str]), `Objects` (list[str] - types).\n\n**Processing & Scene Graph:**\n1.  **Analyze Task:** Understand the input JSON.\n2.  **Identify Objects:** List **Core Task Objects** (involved in `Objects`/`Goal`/`Action Sequence`) and **Environment Objects** (draw from `Environment`, more is better). Note types/quantities. Assign instance IDs (e.g., `pen_0`).\n3.  **Reasoning Paragraph:** Write a paragraph explaining initial object placement based on task analysis. Include:\n    *   Intro sentence (goal: layout generation; total object count).\n    *   Core Task Objects list (counts & instance IDs).\n    *   Environment Objects list (counts & instance IDs).\n    *   Placement Reasoning Paragraph: A coherent paragraph of detailed scene description, including the objects, their positions, and the overall layout of the tabletop infered from the given `environment`/`Goal`\n4.  **Scene Graph Text:** Based *only* on reasoning, generate scene graph text:\n    *   Nodes: 1. `(instance_id, is at, Position (Nine-Grid))` per object. 2. `(instance_id, face to, direction)` per object.\n    *   Edges: Salient `(subject_id, relation, object_id)` (e.g., `left of`). Avoid redundancy. Each triplet on a new line. Relation includes Containment/Vertical/Horizontal classes.\n\n**Output Format (Strict Order):**\n1.  Reasoning Paragraph (from Step 3).\n2.  Scene Graph Text (from Step 4, newline separated triplets).\n3.  The exact text block:\nTherefore, the scene layout is:\n**Final Answer**\n\n4.  Scene Layout JSON (immediately following **Final Answer**, no extra text before/after).\n\n**JSON Format:**\n```json\n{ \"item_placement_zone\": /* follow the input `item_placement_zone` */\n  \"sink_zone\": /* follow the input `sink_zone` */ (if not present, do not output this key)\n  \"objects\": [\n    {\n      \"instance\": \"type_instance_id\", /* e.g., pen_0 */\n      \"description\": \"Brief text.\",\n      \"z_rotation\": 0.0, /* degrees */ (z_rotation 0 means the object is facing the observer)(consider the bbox after rotation, collision, and other factor)\n      \"size\": [width, depth, height], /* cm */\n      \"position\": [x, y, z] /* cm, center coords, Calculate Z based on support: Z ≈ height/2 if on table, else account for \"inside\" or \"on the top of\" relation. */\n    }\n    /* ... more objects */ (object order should from large size to small size)\n  ]\n}\n```\n-   Use consistent instance IDs from Step 2.\n-   Provide reasonable object `size` estimates.\n-   Ensure valid JSON structure.\n\nGenerate the three output parts consecutively as specified. The input embodied task description is as follows:",
+    "input_task_description": {
+        "Environment": "A kitchen tabletop with stacked plates near the center-right, a metallic kettle, and a blender on the right side.",
+        "item_placement_zone": [
+            0.0,
+            133.7,
+            0.0,
+            64.0
+        ],
+        "Task": "Set the table by stacking plates and placing the kettle and blender neatly",
+        "Goal": [
+            "Pick the top plate from the stack",
+            "Place the plate on the wooden cutting board",
+            "Pick the kettle",
+            "Place the kettle to the right of the plates",
+            "Pick the blender",
+            "Place the blender next to the kettle"
+        ],
+        "Objects cluster": [
+            "Plate",
+            "Wooden Cutting Board",
+            "Kettle",
+            "Blender"
+        ]
+    },
+    "reasoning_paragraph": "The goal is to determine the setup based on the task of arranging kitchen items on a tabletop. The task suggests a typical kitchen environment, where various cooking and serving items are organized for meal preparation or serving. \n\n**Core Task Objects:** Plate(2), Wooden Cutting Board(1), Kettle(1), Blender(1)\n\n**Environment Objects:** Bowl(2), Knife(2), Storage Jar(1), Decorative Plate(1), Cereal Container(1)\n\nThe scene features a well-organized tabletop with a variety of kitchen items. On the left side, a wooden cutting board holds a small round container and a storage jar, providing easy access for food preparation. Adjacent to these, a bowl and a decorative plate are positioned closely, suggesting they may be used together for serving. Two knives are laid flat on the cutting board, ensuring they are readily available for use. Moving to the right, a white cup filled with a snack is placed next to a metallic kettle, which is designed for pouring hot liquids. Next to the kettle, a blender sits, indicating its role in food preparation. To the far right, a larger bowl with a floral design is positioned near a smaller bowl, creating a visually appealing arrangement. The layout is designed to maintain accessibility and functionality, with items spaced out to prevent clutter while allowing for efficient use of the workspace. Based on this task analysis, the scene graph is arranged as follows:",
+    "scene_graph": [
+        "(plate_3, is at, center)",
+        "(plate_3, face to, front)",
+        "(wooden_cutting_board_0, is at, center)",
+        "(wooden_cutting_board_0, face to, front_right)",
+        "(plate_0, is at, center)",
+        "(plate_0, face to, front)",
+        "(plate_2, is at, center)",
+        "(plate_2, face to, front)",
+        "(plate_1, is at, center)",
+        "(plate_1, face to, front)",
+        "(kettle_0, is at, center)",
+        "(kettle_0, face to, front)",
+        "(blender_0, is at, middle_right)",
+        "(blender_0, face to, front)",
+        "(bowl_1, is at, center)",
+        "(bowl_1, face to, front)",
+        "(bowl_0, is at, middle_left)",
+        "(bowl_0, face to, front)",
+        "(storage_jar_0, is at, center)",
+        "(storage_jar_0, face to, front)",
+        "(knife_0, is at, center)",
+        "(knife_0, face to, front_right)",
+        "(knife_1, is at, center)",
+        "(knife_1, face to, front_left)",
+        "(plate_2, above, plate_0)",
+        "(plate_3, in front of, storage_jar_0)",
+        "(plate_3, in front of, bowl_0)",
+        "(plate_3, left of, plate_1)",
+        "(plate_3, behind, knife_0)",
+        "(plate_3, left of, knife_1)",
+        "(wooden_cutting_board_0, right of, knife_1)",
+        "(wooden_cutting_board_0, left of, bowl_1)",
+        "(wooden_cutting_board_0, in front of, kettle_0)",
+        "(wooden_cutting_board_0, right of, knife_0)",
+        "(wooden_cutting_board_0, left of, plate_0)",
+        "(plate_0, behind, plate_2)",
+        "(plate_0, left of, blender_0)",
+        "(plate_0, right of, bowl_1)",
+        "(plate_0, right of, kettle_0)",
+        "(plate_1, behind, knife_0)",
+        "(plate_1, behind, knife_1)",
+        "(plate_1, left of, kettle_0)",
+        "(plate_1, right of, storage_jar_0)",
+        "(kettle_0, right of, knife_1)",
+        "(kettle_0, behind, bowl_1)",
+        "(kettle_0, left of, plate_2)",
+        "(blender_0, right of, plate_2)",
+        "(blender_0, right of, bowl_1)",
+        "(blender_0, right of, kettle_0)",
+        "(bowl_1, right of, knife_1)",
+        "(bowl_1, right of, knife_0)",
+        "(bowl_0, left of, storage_jar_0)",
+        "(bowl_0, left of, plate_1)",
+        "(bowl_0, left of, knife_0)",
+        "(bowl_0, left of, knife_1)",
+        "(storage_jar_0, left of, knife_0)",
+        "(storage_jar_0, left of, knife_1)",
+        "(knife_0, left of, knife_1)"
+    ],
+    "scene_layout_json": {
+        "item_placement_zone": [
+            0.0,
+            133.7,
+            0.0,
+            64.0
+        ],
+        "objects": [
+            {
+                "instance": "plate_3",
+                "size": [
+                    36.7,
+                    36.7,
+                    2.7
+                ],
+                "position": [
+                    26.5,
+                    38.9,
+                    1.3
+                ],
+                "z_rotation": 0.0,
+                "description": "Classic porcelain plate, smooth round shape, glossy finish, subtle raised rim, white and light grey."
+            },
+            {
+                "instance": "wooden_cutting_board_0",
+                "size": [
+                    39.5,
+                    21.6,
+                    1.4
+                ],
+                "position": [
+                    70.3,
+                    24.2,
+                    0.7
+                ],
+                "z_rotation": 35.8,
+                "description": "Wooden chopping board, smooth, rectangular, cut-out handle, visible wood grain, natural finish."
+            },
+            {
+                "instance": "plate_0",
+                "size": [
+                    24.6,
+                    24.6,
+                    1.8
+                ],
+                "position": [
+                    103.4,
+                    40.0,
+                    0.9
+                ],
+                "z_rotation": 0.0,
+                "description": "Classic porcelain plate, smooth round shape, glossy finish, subtle raised rim, white and light grey."
+            },
+            {
+                "instance": "plate_2",
+                "size": [
+                    21.5,
+                    21.5,
+                    2.2
+                ],
+                "position": [
+                    103.4,
+                    39.8,
+                    2.2
+                ],
+                "z_rotation": 0.0,
+                "description": "Round ceramic plate, dark blue with floral design, smooth glossy surface, slight lip, plain white underside."
+            },
+            {
+                "instance": "plate_1",
+                "size": [
+                    21.4,
+                    21.4,
+                    2.2
+                ],
+                "position": [
+                    54.0,
+                    43.0,
+                    1.1
+                ],
+                "z_rotation": 0.0,
+                "description": "Round ceramic plate, dark blue with floral design, smooth glossy surface, slight lip, plain white underside."
+            },
+            {
+                "instance": "kettle_0",
+                "size": [
+                    22.0,
+                    15.8,
+                    23.6
+                ],
+                "position": [
+                    76.4,
+                    47.2,
+                    11.9
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek stainless steel body with polished finish, comfortable handle, and top-mounted lid."
+            },
+            {
+                "instance": "blender_0",
+                "size": [
+                    17.8,
+                    16.1,
+                    28.6
+                ],
+                "position": [
+                    122.3,
+                    39.4,
+                    14.3
+                ],
+                "z_rotation": 0.0,
+                "description": "Cylindrical gray blending jar with handle, square orange base, modern color scheme."
+            },
+            {
+                "instance": "bowl_1",
+                "size": [
+                    16.2,
+                    16.2,
+                    10.0
+                ],
+                "position": [
+                    83.9,
+                    26.2,
+                    6.2
+                ],
+                "z_rotation": 0.0,
+                "description": "Round ceramic bowl with a smooth surface, slight lip, light color, and elegant design."
+            },
+            {
+                "instance": "bowl_0",
+                "size": [
+                    13.4,
+                    13.3,
+                    8.3
+                ],
+                "position": [
+                    11.5,
+                    47.5,
+                    4.1
+                ],
+                "z_rotation": 0.0,
+                "description": "Round ceramic bowl with a smooth surface, slight lip, light color, and elegant design."
+            },
+            {
+                "instance": "storage_jar_0",
+                "size": [
+                    13.0,
+                    13.0,
+                    18.7
+                ],
+                "position": [
+                    26.6,
+                    49.6,
+                    10.6
+                ],
+                "z_rotation": 0.0,
+                "description": "Glass jar with transparent cylindrical body and metallic lid; surface shows signs of wear."
+            },
+            {
+                "instance": "knife_0",
+                "size": [
+                    21.7,
+                    2.9,
+                    1.1
+                ],
+                "position": [
+                    52.0,
+                    23.8,
+                    1.8
+                ],
+                "z_rotation": 54.2,
+                "description": "Sleek stainless steel knife with a long tapered blade and black handle with three rivets."
+            },
+            {
+                "instance": "knife_1",
+                "size": [
+                    20.6,
+                    2.9,
+                    1.1
+                ],
+                "position": [
+                    55.4,
+                    26.5,
+                    1.8
+                ],
+                "z_rotation": -30.7,
+                "description": "Sleek stainless steel knife with a long tapered blade and black handle with three rivets."
+            }
+        ]
+    }
+}

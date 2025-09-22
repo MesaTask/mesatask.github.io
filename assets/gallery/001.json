@@ -1,0 +1,263 @@
+{
+    "prompt_instructions": "You are an expert designing a 3D scene layout on tabletop from an embodied task description. Output a reasoning process, a scene graph text, and a tabletop layout JSON.\n**Spatial definition:**:\n1. Coordinate System: Origin at tabletop's proximal top-left (0, 0, 0). x-axis right (+), y-axis from proximal to distal (+), z-axis up (+). Observer at -y, looking +y.\n2. Direction Mappings: Direction Mappings: Front (small y), Back (large y), Left (small x), Right (large x), Facing based on z-axis rotation. (e.g., \"face to front\" points towards the observer, i.e., the -y direction). |\n3. Spatial Relationship\n    - Position (Nine-Grid): x (left/middle/right) + y (front/middle/back).\n    - Horizontal: Compare x/y for left/right, front/back. Keep closest pairs, remove duals.\n    - Vertical: Compare z for above/below. Keep closest pairs, remove duals.\n    - Containment: Compare z and x/y overlap for inside.\n\n**Input:** JSON object with keys: `Environment` (string), \"item_placement_zone\": [X_min, X_max, Y_min, Y_max], /* cm */, 'sink_zone': [X_min, X_max, Y_min, Y_max], /* cm */(Only exist when it is a bathroom vanity), `Task` (string), `Goal` (list[str]), `Action Sequence` (list[str]), `Objects` (list[str] - types).\n\n**Processing & Scene Graph:**\n1.  **Analyze Task:** Understand the input JSON.\n2.  **Identify Objects:** List **Core Task Objects** (involved in `Objects`/`Goal`/`Action Sequence`) and **Environment Objects** (draw from `Environment`, more is better). Note types/quantities. Assign instance IDs (e.g., `pen_0`).\n3.  **Reasoning Paragraph:** Write a paragraph explaining initial object placement based on task analysis. Include:\n    *   Intro sentence (goal: layout generation; total object count).\n    *   Core Task Objects list (counts & instance IDs).\n    *   Environment Objects list (counts & instance IDs).\n    *   Placement Reasoning Paragraph: A coherent paragraph of detailed scene description, including the objects, their positions, and the overall layout of the tabletop infered from the given `environment`/`Goal`\n4.  **Scene Graph Text:** Based *only* on reasoning, generate scene graph text:\n    *   Nodes: 1. `(instance_id, is at, Position (Nine-Grid))` per object. 2. `(instance_id, face to, direction)` per object.\n    *   Edges: Salient `(subject_id, relation, object_id)` (e.g., `left of`). Avoid redundancy. Each triplet on a new line. Relation includes Containment/Vertical/Horizontal classes.\n\n**Output Format (Strict Order):**\n1.  Reasoning Paragraph (from Step 3).\n2.  Scene Graph Text (from Step 4, newline separated triplets).\n3.  The exact text block:\nTherefore, the scene layout is:\n**Final Answer**\n\n4.  Scene Layout JSON (immediately following **Final Answer**, no extra text before/after).\n\n**JSON Format:**\n```json\n{ \"item_placement_zone\": /* follow the input `item_placement_zone` */\n  \"sink_zone\": /* follow the input `sink_zone` */ (if not present, do not output this key)\n  \"objects\": [\n    {\n      \"instance\": \"type_instance_id\", /* e.g., pen_0 */\n      \"description\": \"Brief text.\",\n      \"z_rotation\": 0.0, /* degrees */ (z_rotation 0 means the object is facing the observer)(consider the bbox after rotation, collision, and other factor)\n      \"size\": [width, depth, height], /* cm */\n      \"position\": [x, y, z] /* cm, center coords, Calculate Z based on support: Z ≈ height/2 if on table, else account for \"inside\" or \"on the top of\" relation. */\n    }\n    /* ... more objects */ (object order should from large size to small size)\n  ]\n}\n```\n-   Use consistent instance IDs from Step 2.\n-   Provide reasonable object `size` estimates.\n-   Ensure valid JSON structure.\n\nGenerate the three output parts consecutively as specified. The input embodied task description is as follows:",
+    "input_task_description": {
+        "Environment": "A tabletop with a desk lamp, two carafes, a tray holding a potted plant and a bowl of fruit, and an empty bowl.",
+        "item_placement_zone": [
+            0.0,
+            196.2,
+            0.0,
+            79.1
+        ],
+        "Task": "Organize fruit from bowl into empty bowl and place tray near lamp",
+        "Goal": [
+            "Pick all fruit out of the bowl on the tray",
+            "Place all fruit into the empty bowl on the right",
+            "Pick up the tray with plant and empty bowl",
+            "Place the tray near the desk lamp on the left side"
+        ],
+        "Objects cluster": [
+            "Fruit",
+            "Bowl",
+            "Tray",
+            "Desk Lamp"
+        ]
+    },
+    "reasoning_paragraph": "The goal is to determine the setup based on the task of organizing fruit and arranging objects on a tabletop. The task suggests a typical kitchen or dining table setting, where various items are used for serving and organizing food. \n\n**Core Task Objects:**  \nFruit(5), Bowl(2), Tray(1), Desk Lamp(1)\n\n**Environment Objects:**  \nCarafe(2), Potted Plant(1)\n\nThe scene features a well-organized tabletop layout that facilitates the task at hand. On the left side, a white desk lamp is positioned, providing illumination for the area. Next to it, two metallic carafes are placed, with the larger one slightly behind the smaller, ensuring easy access to both. In the center, a rectangular tray holds a potted plant with spiky leaves and a bowl filled with assorted fruits, including apples and oranges. The tray is situated in front of the carafes, allowing for a clear view of the fruit. To the right of the tray, an empty round bowl is positioned, ready to receive the fruit being organized. This arrangement maintains a clean and open space on the tabletop, ensuring that each object is easily accessible without interference. The overall layout emphasizes functionality, with the lamp providing light and the carafes and tray facilitating the task of moving fruit. Based on this task analysis, the scene graph is arranged as follows:",
+    "scene_graph": [
+        "(tray_0, is at, center)",
+        "(tray_0, face to, front)",
+        "(bowl_1, is at, middle_right)",
+        "(bowl_1, face to, front)",
+        "(desk_lamp_0, is at, middle_left)",
+        "(desk_lamp_0, face to, right)",
+        "(plant_0, is at, center)",
+        "(plant_0, face to, front)",
+        "(bowl_0, is at, center)",
+        "(bowl_0, face to, front)",
+        "(carafe_1, is at, center)",
+        "(carafe_1, face to, front)",
+        "(carafe_0, is at, center)",
+        "(carafe_0, face to, front)",
+        "(fruit_0, is at, center)",
+        "(fruit_0, face to, front)",
+        "(fruit_1, is at, center)",
+        "(fruit_1, face to, front)",
+        "(fruit_4, is at, center)",
+        "(fruit_4, face to, front)",
+        "(fruit_5, is at, center)",
+        "(fruit_5, face to, front)",
+        "(fruit_2, is at, center)",
+        "(fruit_2, face to, front)",
+        "(fruit_0, in, bowl_0)",
+        "(fruit_1, in, bowl_0)",
+        "(fruit_4, in, bowl_0)",
+        "(fruit_5, in, bowl_0)",
+        "(fruit_2, in, bowl_0)",
+        "(bowl_0, above, tray_0)",
+        "(tray_0, left of, bowl_0)",
+        "(tray_0, right of, plant_0)",
+        "(tray_0, right of, carafe_0)",
+        "(tray_0, left of, bowl_1)",
+        "(tray_0, right of, carafe_1)",
+        "(bowl_1, right of, bowl_0)",
+        "(bowl_1, right of, plant_0)",
+        "(desk_lamp_0, left of, carafe_1)",
+        "(desk_lamp_0, left of, carafe_0)",
+        "(plant_0, behind, bowl_0)",
+        "(carafe_1, left of, carafe_0)",
+        "(carafe_1, left of, plant_0)",
+        "(carafe_1, left of, bowl_0)",
+        "(carafe_0, left of, plant_0)",
+        "(carafe_0, left of, bowl_0)"
+    ],
+    "scene_layout_json": {
+        "item_placement_zone": [
+            0.0,
+            196.2,
+            0.0,
+            79.1
+        ],
+        "objects": [
+            {
+                "instance": "tray_0",
+                "size": [
+                    72.7,
+                    41.4,
+                    8.1
+                ],
+                "position": [
+                    116.7,
+                    33.5,
+                    4.1
+                ],
+                "z_rotation": 0.0,
+                "description": "Rectangular wooden tray with polished finish, contrasting leather pad, raised edges, modern aesthetic."
+            },
+            {
+                "instance": "bowl_1",
+                "size": [
+                    35.1,
+                    35.1,
+                    11.5
+                ],
+                "position": [
+                    171.4,
+                    42.2,
+                    5.8
+                ],
+                "z_rotation": 0.0,
+                "description": "White porcelain bowl, small, smooth surface, rounded shape, slightly raised base."
+            },
+            {
+                "instance": "desk_lamp_0",
+                "size": [
+                    21.4,
+                    38.5,
+                    56.6
+                ],
+                "position": [
+                    16.7,
+                    51.8,
+                    28.4
+                ],
+                "z_rotation": 72.2,
+                "description": "Black desk lamp with articulated arm, circular base, and round adjustable shade; sleek, modern design."
+            },
+            {
+                "instance": "plant_0",
+                "size": [
+                    26.5,
+                    27.0,
+                    32.4
+                ],
+                "position": [
+                    107.8,
+                    38.6,
+                    17.5
+                ],
+                "z_rotation": 0.0,
+                "description": "Small potted plant with vibrant green, long slender leaves; textured, modern, minimalistic pot design."
+            },
+            {
+                "instance": "bowl_0",
+                "size": [
+                    25.8,
+                    25.8,
+                    13.3
+                ],
+                "position": [
+                    116.0,
+                    28.8,
+                    8.0
+                ],
+                "z_rotation": 0.0,
+                "description": "Round bowl with a smooth white exterior and intricate blue patterns, slightly flared rim."
+            },
+            {
+                "instance": "carafe_1",
+                "size": [
+                    26.5,
+                    23.2,
+                    32.2
+                ],
+                "position": [
+                    52.1,
+                    46.1,
+                    16.1
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek silver coffee carafe with a curved handle, rounded body, and reflective surface."
+            },
+            {
+                "instance": "carafe_0",
+                "size": [
+                    23.2,
+                    20.5,
+                    28.1
+                ],
+                "position": [
+                    72.9,
+                    45.7,
+                    14.2
+                ],
+                "z_rotation": 0.0,
+                "description": "Sleek silver coffee carafe with a curved handle, rounded body, and reflective surface."
+            },
+            {
+                "instance": "fruit_0",
+                "size": [
+                    10.8,
+                    10.7,
+                    10.1
+                ],
+                "position": [
+                    118.6,
+                    27.8,
+                    14.5
+                ],
+                "z_rotation": 0.0,
+                "description": "Spherical, vibrant orange with textured dimples, glossy surface, and small stem on top."
+            },
+            {
+                "instance": "fruit_1",
+                "size": [
+                    10.6,
+                    10.5,
+                    12.4
+                ],
+                "position": [
+                    117.8,
+                    35.8,
+                    12.9
+                ],
+                "z_rotation": 0.0,
+                "description": "A shiny red apple with a smooth surface, rounded shape, slim brown stem, and green leaf."
+            },
+            {
+                "instance": "fruit_4",
+                "size": [
+                    10.5,
+                    10.4,
+                    10.4
+                ],
+                "position": [
+                    129.5,
+                    27.0,
+                    14.2
+                ],
+                "z_rotation": 0.0,
+                "description": "Round, orange fruit with smooth, shiny skin, small stem, and two green leaves."
+            },
+            {
+                "instance": "fruit_5",
+                "size": [
+                    10.2,
+                    10.3,
+                    9.7
+                ],
+                "position": [
+                    128.3,
+                    34.4,
+                    13.6
+                ],
+                "z_rotation": 0.0,
+                "description": "A ripe orange with textured, dimpled skin, spherical shape, vibrant color, and small green stem."
+            },
+            {
+                "instance": "fruit_2",
+                "size": [
+                    8.2,
+                    8.2,
+                    7.8
+                ],
+                "position": [
+                    122.0,
+                    21.5,
+                    14.5
+                ],
+                "z_rotation": 0.0,
+                "description": "A shiny red apple with a smooth surface, rounded shape, slim brown stem, and green leaf."
+            }
+        ]
+    }
+}
