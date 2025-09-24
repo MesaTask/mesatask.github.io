@@ -14,7 +14,7 @@
             7.4,
             46.6
         ],
-        "Task": "Organize grooming items by placing lotion bottles near the towel.",
+        "Task": "Organize grooming items by placing lotion bottles near the towel. (The purple area represents the sink basin.)",
         "Goal": [
             "Pick lotion bottle 1 from left cluster",
             "Place lotion bottle 1 near the towel on the right side",

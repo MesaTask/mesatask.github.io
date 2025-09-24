@@ -98,7 +98,7 @@
                 "position": [
                     42.5,
                     33.6,
-                    1.7
+                    2.0
                 ],
                 "z_rotation": 0.0,
                 "description": "Rectangular placemat, red and beige colors, intricate patterns, fringed edges, textured appearance."
@@ -202,7 +202,7 @@
                 ],
                 "position": [
                     128.0,
-                    54.8,
+                    59.0,
                     18.4
                 ],
                 "z_rotation": 0.0,
@@ -231,9 +231,9 @@
                     25.0
                 ],
                 "position": [
-                    112.7,
-                    46.2,
-                    12.2
+                    109.0,
+                    49.6,
+                    15.6
                 ],
                 "z_rotation": 0.0,
                 "description": "Glass jar with transparent cylindrical body and metallic lid; surface shows signs of wear."
@@ -247,8 +247,8 @@
                 ],
                 "position": [
                     112.7,
-                    46.0,
-                    21.1
+                    24.3,
+                    5.1
                 ],
                 "z_rotation": 0.0,
                 "description": "Round, orange fruit with dimpled skin, vibrant yellow-orange hue, smooth surface, symmetrical appearance."
@@ -261,8 +261,8 @@
                     9.6
                 ],
                 "position": [
-                    112.8,
-                    46.7,
+                    121.2,
+                    48.4,
                     11.7
                 ],
                 "z_rotation": 0.0,
@@ -276,8 +276,8 @@
                     9.1
                 ],
                 "position": [
-                    112.8,
-                    45.4,
+                    116.0,
+                    40.0,
                     12.7
                 ],
                 "z_rotation": 0.0,

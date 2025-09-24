@@ -363,7 +363,7 @@ class SceneGallery {
         let html = `
             <div class="info-tabs" style="border-bottom: 1px solid #ddd; margin-bottom: 1rem;">
                 <button class="tab-button active" data-tab="objects" style="padding: 0.5rem 1rem; border: none; background: #3273dc; color: white; cursor: pointer; margin-right: 2px; border-radius: 4px 4px 0 0;">Objects</button>
-                <button class="tab-button" data-tab="environment" style="padding: 0.5rem 1rem; border: none; background: #f5f5f5; color: #333; cursor: pointer; margin-right: 2px; border-radius: 4px 4px 0 0;">Environment</button>
+                <button class="tab-button" data-tab="environment" style="padding: 0.5rem 1rem; border: none; background: #f5f5f5; color: #333; cursor: pointer; margin-right: 2px; border-radius: 4px 4px 0 0;">Task Info</button>
                 <button class="tab-button" data-tab="reasoning" style="padding: 0.5rem 1rem; border: none; background: #f5f5f5; color: #333; cursor: pointer; margin-right: 2px; border-radius: 4px 4px 0 0;">Reasoning</button>
                 <button class="tab-button" data-tab="relations" style="padding: 0.5rem 1rem; border: none; background: #f5f5f5; color: #333; cursor: pointer; border-radius: 4px 4px 0 0;">Relations</button>
             </div>
@@ -431,7 +431,7 @@ class SceneGallery {
                 <!-- Environment Tab -->
                 <div id="environment-tab" class="tab-panel" style="display: none;">
                     <h6 style="margin-bottom: 1rem; color: #28a745; font-weight: bold;">
-                        🌍 Environment & Task Information
+                        🌍 Task Information
                     </h6>
                     <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                         <h6 style="color: #495057; margin-bottom: 0.5rem; font-weight: bold;">Environment:</h6>
